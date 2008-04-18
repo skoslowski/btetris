@@ -1,7 +1,0 @@
-MIDlet-1: scriptris,/red.png,tetris.core.TetrisMIDlet
-MIDlet-Jar-URL: scriptris2.jar
-MIDlet-Name: scriptris2
-MIDlet-Vendor: Midlet Suite Vendor
-MIDlet-Version: 2.1.15
-MicroEdition-Configuration: CLDC-1.0
-MicroEdition-Profile: MIDP-2.0
