@@ -8,16 +8,16 @@ import tetris.core.TetrisMIDlet;
 import tetris.ui.TetrisCanvas;
 
 public class TetrisField {
-	
+
 	public static final int ROTATE_LEFT = 1, ROTATE_RIGHT = 2, LEFT = 3;
-	public static final int RIGHT = 4, STEP = 5, DROP = 6;
-	
+	public static final int RIGHT = 4, SOFTDROP = 5, HARDDROP = 6, STEP=7;
+
 	private Brick brick;
 	public Brick nextBrick = null;  // for preview
 	private TetrisMIDlet midlet;
 	private Row rows[];
-	public static final int COLS = 12, ROWS = 18 ;
-	
+	public static final int COLS = 10, ROWS = 18;
+
 	public TetrisField(TetrisMIDlet midlet) {
 		this.midlet = midlet;		
 		rows = new Row[ROWS];
@@ -25,59 +25,85 @@ public class TetrisField {
 
 		newBrick();
 	}
-	
+
 	private void newBrick() {
 		brick = (nextBrick != null)? nextBrick : Brick.getRandomBrick((TetrisField.COLS / 2) - 2);
 		nextBrick = Brick.getRandomBrick((TetrisField.COLS / 2) - 2);
-		
+
 		if (brickCollisionCheck(brick)) midlet.endOfGame();
 	}
-	
+
 	public synchronized void brickTransition(int type) {
-		
+
 		Brick temp = brick.clone();
+		boolean nextPhase = false;
 
 		switch (type) {
+
 		case ROTATE_LEFT:
 			temp.rotate(true);
+			if (!brickCollisionCheck(temp)) brick = temp;
 			break;
+
 		case ROTATE_RIGHT:
 			temp.rotate(false);
+			if (!brickCollisionCheck(temp)) brick = temp;
 			break;
+
 		case LEFT:
 			temp.left();
+			if (!brickCollisionCheck(temp)) brick = temp;
 			break;
+
 		case RIGHT:
 			temp.right();
+			if (!brickCollisionCheck(temp)) brick = temp;
 			break;
+
 		case STEP:
+		case SOFTDROP:
 			temp.step();
-			break;
-		case DROP:
-			while (!brickCollisionCheck(temp)) temp.step();
-		}
-
-		if (brickCollisionCheck(temp)) {
-			if(type==STEP || type==DROP) {
-				
-				temp.stepback();
-				addBrickToRows(temp);
-
-				// has a row been completed?
-				int count = rowCompleteCheck();
-				if (count > 1) midlet.multiRowCompleted(count);
-
-				// Create new Brick
-				newBrick();		
-	
+			if (!brickCollisionCheck(temp)) {
+				if(type==SOFTDROP) midlet.score.addPointsSoftDropStep();
+				brick = temp;
+			} else {
+				nextPhase = true;
 			}
-		} else {
+			break;
+
+		case HARDDROP:
+			int n = 0;
+			while (!brickCollisionCheck(temp)) {
+				n++;
+				temp.step();
+			}
+			temp.stepback();
 			brick = temp;
+			
+			midlet.score.addPointsHardDrop(n-1);
+			nextPhase = true;
+
 		}
+
+		if (nextPhase) {
+
+			addBrickToRows(brick);
+			// has a row been completed?
+			int count = rowCompleteCheck();
+			// notify midlet
+			if (count > 1) midlet.multiRowCompleted(count);
+			// scoring
+			midlet.score.addLines(count);
+
+			// Create new Brick
+			newBrick();		
+
+		}
+
 		temp = null;
 	}
-	
-	
+
+
 	public boolean brickCollisionCheck(Brick b) {
 		int x,y;
 		for (int i = 0;i < b.blocks.length; i++) {
@@ -87,7 +113,7 @@ public class TetrisField {
 		}
 		return false;
 	}
-	
+
 	/* add the brick to the rows-Objects*/
 	private void addBrickToRows(Brick b) {
 		for (int i = 0;i < b.blocks.length;i++)
@@ -110,11 +136,10 @@ public class TetrisField {
 		}
 		//other player sent rows
 		addRandomRows();
-		
-		midlet.score.addLines(count);
+
 		return count;
 	}
-	
+
 	public void addRandomRows() {
 		if(midlet.rowsToAdd.size() > 0) {
 			for(Enumeration counts = midlet.rowsToAdd.elements(); counts.hasMoreElements();) {
@@ -141,16 +166,16 @@ public class TetrisField {
 		g.setColor(TetrisCanvas.BORDER_COLOR);
 		for (int i = 1;i < TetrisField.COLS;i++) g.drawLine(i*blockSize, 0,i*blockSize, areaHeight);
 		for (int i = 1;i < TetrisField.ROWS;i++) g.drawLine(0, i*blockSize, areaWidth, i*blockSize);
-		
-    	/* draw rows*/
+
+		/* draw rows*/
 		for (int y = 0; y < ROWS; y++)
 			rows[y].paint(g, blockSize);
 
 		/* draw brick*/
-    	brick.paint(g, blockSize,true);
+		brick.paint(g, blockSize,true);
 		/* frame*/
 		g.setColor(TetrisCanvas.FRAME_COLOR);
 		g.drawRect(0, 0, areaWidth, areaHeight);
-    }
-	
+	}
+
 }

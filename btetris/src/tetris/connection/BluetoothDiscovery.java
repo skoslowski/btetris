@@ -69,7 +69,8 @@ public class BluetoothDiscovery implements DiscoveryListener {
 			listener.bluetoothSearchLog("Inquiry completed (found: "+unsearchedRemoteDevices.size()+")\n \n");
 
 			if(unsearchedRemoteDevices.isEmpty() && transID==-1) {
-				listener.bluetoothSearchComplete(null);
+				listener.bluetoothSearchLog("\nDone!\n");
+				listener.bluetoothSearchComplete(servers);
 			} else {
 				listener.bluetoothSearchLog("Searching for Games...\n");
 				startServiceSearch((RemoteDevice)unsearchedRemoteDevices.firstElement());

@@ -8,7 +8,7 @@ public class SettingsMenu extends Form implements CommandListener,ItemStateListe
 	private final KeyItem keyFields[] = new KeyItem[6];
 	
 	
-	private final String labels[] = {"Left key","Right key","Rotate left key","Rotate right key","Step key","Drop key"};
+	private final String labels[] = {"Left key","Right key","Rotate left key","Rotate right key","Softdrop key","Harddrop key"};
 	private static final int keys[] = {Canvas.KEY_NUM0, Canvas.KEY_NUM1, Canvas.KEY_NUM2, Canvas.KEY_NUM3, 
 		Canvas.KEY_NUM4, Canvas.KEY_NUM5, Canvas.KEY_NUM6, Canvas.KEY_NUM7, Canvas.KEY_NUM8, Canvas.KEY_NUM9, 
 		Canvas.KEY_STAR, Canvas.KEY_POUND};
@@ -29,7 +29,7 @@ public class SettingsMenu extends Form implements CommandListener,ItemStateListe
 			append(keyFields[i]);
 		}	
 
-		fallingSpeedGauge = new Gauge("Step speed",true,5,midlet.settings.fallingSpeed);
+		fallingSpeedGauge = new Gauge("Softdrop speed",true,5,midlet.settings.fallingSpeed);
 		append(fallingSpeedGauge);
 		
 		store=new Command("Store", Command.OK, 1);

@@ -9,14 +9,14 @@ import tetris.tetris.TetrisField;
 
 public class TetrisCanvas extends Canvas implements Runnable {
 
-	private static final int DEFAULT_SPEED = 500;
-	private int blockSize=0;
-	
 	public static final int FRAME_COLOR = 0xFFFFFF, ACTIVE_BORDER_COLOR = 0xAAAAAA; 
 	public static final int PASSIVE_BORDER_COLOR = 0x777777, BORDER_COLOR = 0x111111;
 
+	private static final int DEFAULT_SPEED = 800;
+	private int blockSize=0;
+
 	private static final int GAME_WON = 1, GAME_LOST = 2, GAME_NORMAL = 3 ;
-	public int gameState;
+	private int gameState;
 	private boolean falling;
 
 	private TetrisMIDlet midlet;
@@ -28,7 +28,7 @@ public class TetrisCanvas extends Canvas implements Runnable {
 		setFullScreenMode(true);
 		reset();
 	}
-	
+
 	public void reset() {
 		field = new TetrisField(midlet);
 		gameState = GAME_NORMAL;
@@ -38,29 +38,49 @@ public class TetrisCanvas extends Canvas implements Runnable {
 
 	public void run() {
 		System.out.println("Game Thread started");
-		try {
-			while (Thread.currentThread() == gameThread) {
-				long startTime = System.currentTimeMillis();
-				
-				if (isShown() && gameState == TetrisCanvas.GAME_NORMAL) {
+
+		while (Thread.currentThread() == gameThread) { 
+			long timeTick = Math.max(DEFAULT_SPEED - (long)20*midlet.score.getLevel(),50);
+			long timeTickFalling = Math.max((timeTick*(6-midlet.settings.fallingSpeed))/20,50);
+
+			long startTime = System.currentTimeMillis();
+
+			if (isShown() && gameState == TetrisCanvas.GAME_NORMAL) {
+				if(!falling) {
 					field.brickTransition(TetrisField.STEP);
-					repaint();
-				}
-				
-				long timeTaken = System.currentTimeMillis() - startTime;
-				long timeTick = DEFAULT_SPEED - (long)Math.sqrt(16000*(midlet.score.lines/10));
-				timeTick  = Math.max(falling ? (timeTick*(6-midlet.settings.fallingSpeed))/10 : timeTick,50);
-				
-				if (timeTaken < timeTick) {
-					Thread.sleep(timeTick - timeTaken);
 				} else {
-					Thread.yield();
-					System.out.println("game thread yield");
+					field.brickTransition(TetrisField.SOFTDROP);
 				}
+
+				repaint();
 			}
-			System.out.println("Game Thread done");
-			
-		} catch (InterruptedException e) {}
+
+			long timeTaken = System.currentTimeMillis() - startTime;
+			synchronized(this) {
+				try {
+
+					if(!falling) {
+						wait(timeTick - timeTaken);
+
+					} else {
+						wait(timeTickFalling- timeTaken);
+
+						if(!falling) {
+							wait(timeTick - (System.currentTimeMillis() - startTime));
+						}
+
+					}	
+
+				} catch (InterruptedException e) {
+					
+				} catch (IllegalArgumentException e) {
+					Thread.yield();
+				}
+				
+			}
+		}
+		System.out.println("Game Thread done");
+
 	}
 
 	public synchronized void start() {
@@ -84,6 +104,7 @@ public class TetrisCanvas extends Canvas implements Runnable {
 		repaint();
 	}
 
+
 	public void keyPressed(int keyCode) {
 		if(gameThread == null) return;
 		int keyCodes[] = midlet.settings.keys;
@@ -93,13 +114,8 @@ public class TetrisCanvas extends Canvas implements Runnable {
 			if(keyCode == keyCodes[1] || keyCode==-4) field.brickTransition(TetrisField.RIGHT);
 			if(keyCode == keyCodes[2] || keyCode==-1) field.brickTransition(TetrisField.ROTATE_LEFT);
 			if(keyCode == keyCodes[3]) 				  field.brickTransition(TetrisField.ROTATE_RIGHT);
-			if(keyCode == keyCodes[4] || keyCode==-2) {
-				field.brickTransition(TetrisField.STEP);
-				synchronized(this) {
-					falling=true;
-				}
-			}
-			if(keyCode == keyCodes[5]) field.brickTransition(TetrisField.DROP);
+			if(keyCode == keyCodes[4] || keyCode==-2) setFalling(true);
+			if(keyCode == keyCodes[5]) 				  field.brickTransition(TetrisField.HARDDROP);
 		}
 		if(keyCode==-5 || keyCode==-6) {
 			if(gameState == TetrisCanvas.GAME_NORMAL) {
@@ -112,11 +128,15 @@ public class TetrisCanvas extends Canvas implements Runnable {
 		repaint();
 	}
 
+	private void setFalling(boolean falling) {
+		this.falling=falling;
+		synchronized(this) {
+			notify();
+		}
+	}
+
 	public void keyReleased(int keyCode) {
-		if(keyCode == midlet.settings.keys[4] || keyCode==-2) 
-			synchronized(this) {
-				falling=false;
-			}
+		if(keyCode == midlet.settings.keys[4] || keyCode==-2) setFalling(false);
 	}
 
 	/* try to get the maximum out of available space
@@ -149,11 +169,11 @@ public class TetrisCanvas extends Canvas implements Runnable {
 		int fontAnchorY = blockSize * (TetrisField.ROWS / 2);
 		String gameScore = "";
 		if (midlet.gameType != TetrisMIDlet.SINGLE)
-			gameScore = " (" + midlet.score.won + ":" + midlet.score.lost + ")";
+			gameScore = " (" + midlet.score.getWon() + ":" + midlet.score.getLost() + ")";
 		if (gameState == TetrisCanvas.GAME_LOST)
-			drawCenteredTextBox(g, fontAnchorX, fontAnchorY,"Verloren!" + gameScore);
+			drawCenteredTextBox(g, fontAnchorX, fontAnchorY,"You lost!" + gameScore);
 		if (gameState == TetrisCanvas.GAME_WON)
-			drawCenteredTextBox(g, fontAnchorX, fontAnchorY,"Gewonnen!" + gameScore);	
+			drawCenteredTextBox(g, fontAnchorX, fontAnchorY,"You won!" + gameScore);	
 
 
 		/*--------------PREVIEW AREA----------------*/
@@ -180,7 +200,7 @@ public class TetrisCanvas extends Canvas implements Runnable {
 
 
 		/*--------------INCOMING ROW ALERT----------------*/
-		
+
 		g.translate(0 - g.getTranslateX(), 0 - g.getTranslateY());
 		if(midlet.rowsToAdd.size()>0) {
 			g.setColor(0xFF0000);
