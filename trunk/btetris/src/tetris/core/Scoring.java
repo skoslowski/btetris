@@ -5,11 +5,13 @@ import javax.microedition.lcdui.Graphics;
 
 public class Scoring {
 
-	public int points = 0;
-	public int lines = 0;
-	public int sendRows = 0;
-	public int won = 0;
-	public int lost = 0;
+	private long points = 0;
+	private int won = 0;
+	private int lost = 0;
+	
+	private int lines = 0;
+	private int sendRows = 0;
+	private int level = 0;
 
 	/* reset score counter */
 	public void reset() {
@@ -21,32 +23,58 @@ public class Scoring {
 	/* add lines */
 	public void addLines(int n) {
 		lines += n;
-
+		level = lines%10;
+		
 		switch (n) {
 		case 4: 
-			points+=1200; 
+			points+=1200*(level+1); 
 			break;
 		case 3: 
-			points+=300; 
+			points+=300*(level+1); 
 			break;
 		case 2: 
-			points+=100; 
+			points+=100*(level+1); 
 			break;
 		case 1: 
-			points+=40;
+			points+=40*(level+1);
+		}
+	}
+	
+	public int getLevel() {
+		return level;
+	}
+	
+	public void addPointsSoftDropStep() {
+		points++;
+	}
+	
+	public void addPointsHardDrop(int lines) {
+		if(lines>0) {
+			points+=2*lines;
 		}
 	}
 
 	public void addLost() {
 		lost++;
 	}
+	
+	public int getLost() {
+		return lost;
+	}
+	
 	public void addWon() {
 		won++;
 	}
-
+	
+	public int getWon() {
+		return won;
+	}
+	
 	public void addSendRows(int n) {
 		sendRows += n;
 	}
+	
+	
 	
 	public int paint(Graphics g, boolean multiplayer) {
 		g.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL));

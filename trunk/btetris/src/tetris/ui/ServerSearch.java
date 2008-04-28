@@ -62,7 +62,7 @@ class ServerSearch
 	
 	public void bluetoothSearchComplete(Hashtable servers) {
 		removeCommand(abort);
-		if(servers.size() > 0) {
+		if(servers != null && servers.size() > 0) {
 			this.servers=servers;
 			addCommand(next);
 			addCommand(retry);
