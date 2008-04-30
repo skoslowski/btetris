@@ -5,6 +5,7 @@ public class Protocol {
 	public static final byte TWO_LINES = (byte)0x02;
 	public static final byte FOUR_LINES = (byte)0x03;
 	public static final byte PAUSE_GAME = (byte)0x04;
+	public static final byte GAME_HEIHGT = (byte)0x05;
 
 	public static final byte UNPAUSE_GAME = (byte)0x06;
 	

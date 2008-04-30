@@ -4,7 +4,7 @@ public interface BluetoothListener {
 	
 	void bluetoothConnected();
 	
-	void bluetoothReceivedEvent(byte b);
+	void bluetoothReceivedEvent(byte b[]);
 	
 	void bluetoothDisconnected(boolean wasRunning);
 	

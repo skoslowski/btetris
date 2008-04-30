@@ -2,7 +2,7 @@ package tetris.tetris;
 
 import javax.microedition.lcdui.Graphics;
 
-import tetris.ui.TetrisCanvas;
+import tetris.ui.TetrisGame;
 
 public class Block {
 
@@ -28,7 +28,7 @@ public class Block {
 	public void paint(Graphics g, int blockSize) {
 		g.setColor(color);
 		g.fillRect(x*blockSize,y*blockSize,blockSize, blockSize);
-		g.setColor(TetrisCanvas.PASSIVE_BORDER_COLOR);
+		g.setColor(TetrisGame.PASSIVE_BORDER_COLOR);
 		g.drawRect(x*blockSize,y*blockSize,blockSize, blockSize);
 	}
 

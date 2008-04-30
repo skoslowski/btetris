@@ -34,9 +34,11 @@ public abstract class BluetoothConnection extends Thread {
 					connection.receive(inBuf);
 					ticksSinceLastEvent = 0;
 					
-					if(inBuf[0] != Protocol.PING)
-						listener.bluetoothReceivedEvent(inBuf[0]);
-					
+					if(inBuf[0] != Protocol.PING) {
+						byte tmpBuf[] = new byte[inBuf.length];
+						System.arraycopy(inBuf, 0, tmpBuf, 0, inBuf.length);
+						listener.bluetoothReceivedEvent(tmpBuf);
+					}
 				} else {
 					Thread.sleep(WAIT_MILLIS);
 					
@@ -71,6 +73,16 @@ public abstract class BluetoothConnection extends Thread {
 	public boolean send(byte b) {
 		if (connection == null) return false;
 		byte outBuf[] = {b};
+		try {
+			connection.send(outBuf);
+
+		} catch (IOException e) {
+			return false;
+		}
+		return true;
+	}	
+	public boolean send(byte outBuf[]) {
+		if (connection == null) return false;
 		try {
 			connection.send(outBuf);
 
