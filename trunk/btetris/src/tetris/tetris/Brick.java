@@ -3,7 +3,7 @@ package tetris.tetris;
 import javax.microedition.lcdui.Graphics;
 
 import tetris.core.TetrisMIDlet;
-import tetris.ui.TetrisCanvas;
+import tetris.ui.TetrisGame;
 
 /* Brick-Types:
  *
@@ -235,7 +235,7 @@ public class Brick {
 
 		/* Draw Active Frame */
 		if(isActive) {
-			g.setColor(TetrisCanvas.ACTIVE_BORDER_COLOR);
+			g.setColor(TetrisGame.ACTIVE_BORDER_COLOR);
 			int[][] brickMatrix = types[type][rotation];
 			for (int y = 0; y < 4; y++)
 				for (int x = 0; x < 4; x++)

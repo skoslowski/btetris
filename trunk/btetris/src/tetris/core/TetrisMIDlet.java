@@ -87,8 +87,8 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 		gui.showError(s);
 	}
 
-	public void bluetoothReceivedEvent(byte b) {
-		switch (b) {
+	public void bluetoothReceivedEvent(byte b[]) {
+		switch (b[0]) {
 		case Protocol.ONE_LINE:
 			rowsToAdd.addElement(new Integer(1));
 			vibrate(200);
@@ -100,6 +100,10 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 		case Protocol.FOUR_LINES:
 			rowsToAdd.addElement(new Integer(4));
 			vibrate(200);
+			break;
+		case Protocol.GAME_HEIHGT:
+			int gameh = (int)b[1];
+			System.out.println("GameHeight: "+gameh);
 			break;
 		case Protocol.PAUSE_GAME:
 			pauseGame();
@@ -121,9 +125,10 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 	public void startGame(int gametype) {
 		this.gameType = gametype;
 
+		score = new Scoring();
+		score.resetWonLost();
 		gui.gameCanvas.reset();
 		gamePaused = false;
-		score = new Scoring();
 
 		if (gametype == SINGLE) {
 			gui.showTetrisCanvas();
@@ -150,6 +155,29 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 		}
 	}
 
+	/* multiple rows completed in one strike */
+	public void multiRowCompleted(int count) {
+		if(gameType == SINGLE) return;
+
+		if (count >= 4) {
+			bt.send(Protocol.FOUR_LINES); 
+			score.addSendRows(4);
+		} else if (count == 3) {
+			bt.send(Protocol.TWO_LINES); 
+			score.addSendRows(2);
+		} else if (count == 2) {
+			bt.send(Protocol.ONE_LINE); 
+			score.addSendRows(1);
+		}
+	}
+	
+	/* trasmit game height to opponent*/
+	public void sendGameHeight(int myHeight) {
+		if(gameType == SINGLE) return;
+		byte buf[] = {Protocol.GAME_HEIHGT,(byte)myHeight};
+		bt.send(buf);
+	}
+	
 	/* pause Game - notify peer */
 	public void pauseGame() {
 		if(!gamePaused) {
@@ -191,25 +219,9 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 	/* restart the game local*/
 	public void restartGameStart() {
 		gui.gameCanvas.reset();
-		score.reset();
+		score = new Scoring();
 		rowsToAdd.removeAllElements();
 		gui.showTetrisCanvas();
-	}
-
-	/* multiple rows completed in one strike */
-	public void multiRowCompleted(int count) {
-		if(gameType == SINGLE) return;
-
-		if (count >= 4) {
-			bt.send(Protocol.FOUR_LINES); 
-			score.addSendRows(4);
-		} else if (count == 3) {
-			bt.send(Protocol.TWO_LINES); 
-			score.addSendRows(2);
-		} else if (count == 2) {
-			bt.send(Protocol.ONE_LINE); 
-			score.addSendRows(1);
-		}
 	}
 
 	/* end game */

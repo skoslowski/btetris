@@ -22,6 +22,12 @@ public class Row {
 			if (blocks[x] != null) blocks[x].update(x, y);	
 	}
 
+	public boolean isEmpty() {
+		for (int x = 0; x < blocks.length; x++)
+			if (blocks[x] != null) return false;
+		return true;	
+	}
+	
 	public boolean isComplete() {
 		for (int x = 0; x < blocks.length; x++)
 			if (blocks[x] == null) return false;

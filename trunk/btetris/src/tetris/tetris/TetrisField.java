@@ -5,7 +5,7 @@ import java.lang.Integer;
 import java.util.Enumeration;
 
 import tetris.core.TetrisMIDlet;
-import tetris.ui.TetrisCanvas;
+import tetris.ui.TetrisGame;
 
 public class TetrisField {
 
@@ -16,7 +16,7 @@ public class TetrisField {
 	public Brick nextBrick = null;  // for preview
 	private TetrisMIDlet midlet;
 	private Row rows[];
-	public static final int COLS = 10, ROWS = 18;
+	public static final int COLS = 10, ROWS = 20;
 
 	public TetrisField(TetrisMIDlet midlet) {
 		this.midlet = midlet;		
@@ -30,7 +30,10 @@ public class TetrisField {
 		brick = (nextBrick != null)? nextBrick : Brick.getRandomBrick((TetrisField.COLS / 2) - 2);
 		nextBrick = Brick.getRandomBrick((TetrisField.COLS / 2) - 2);
 
-		if (brickCollisionCheck(brick)) midlet.endOfGame();
+		if (brickCollisionCheck(brick)) {
+			midlet.endOfGame();
+		} else {
+		}
 	}
 
 	public synchronized void brickTransition(int type) {
@@ -94,9 +97,15 @@ public class TetrisField {
 			if (count > 1) midlet.multiRowCompleted(count);
 			// scoring
 			midlet.score.addLines(count);
+			//other player sent rows
+			addRandomRows();
 
+			// send new GameHeight
+			midlet.sendGameHeight(getGameHeight());
+			
 			// Create new Brick
-			newBrick();		
+			newBrick();
+			midlet.score.addBrick();
 
 		}
 
@@ -134,9 +143,7 @@ public class TetrisField {
 				count++;
 			}
 		}
-		//other player sent rows
-		addRandomRows();
-
+		
 		return count;
 	}
 
@@ -158,12 +165,19 @@ public class TetrisField {
 			midlet.rowsToAdd.removeAllElements();
 		}
 	}
+	
+	private int getGameHeight() {
+		for(int y=ROWS-1;y>=0;y--) {
+			if(rows[y].isEmpty()) return ROWS-y-1;
+		}
+		return ROWS;
+	}
 
 	public void paint(Graphics g, int blockSize) {
 		/* draw small lines */
 		int areaHeight = blockSize * TetrisField.ROWS;
 		int areaWidth  = blockSize * TetrisField.COLS;
-		g.setColor(TetrisCanvas.BORDER_COLOR);
+		g.setColor(TetrisGame.BORDER_COLOR);
 		for (int i = 1;i < TetrisField.COLS;i++) g.drawLine(i*blockSize, 0,i*blockSize, areaHeight);
 		for (int i = 1;i < TetrisField.ROWS;i++) g.drawLine(0, i*blockSize, areaWidth, i*blockSize);
 
@@ -174,7 +188,7 @@ public class TetrisField {
 		/* draw brick*/
 		brick.paint(g, blockSize,true);
 		/* frame*/
-		g.setColor(TetrisCanvas.FRAME_COLOR);
+		g.setColor(TetrisGame.FRAME_COLOR);
 		g.drawRect(0, 0, areaWidth, areaHeight);
 	}
 

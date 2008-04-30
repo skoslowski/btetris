@@ -10,13 +10,13 @@ public class GUI {
 	private final Display display;
 	private final TetrisMIDlet midlet;
 
-	public final TetrisCanvas gameCanvas;
+	public final TetrisGame gameCanvas;
 	
 	public GUI (TetrisMIDlet midlet) {
 		this.display=Display.getDisplay(midlet);
 		this.midlet =midlet;
 		
-		gameCanvas = new TetrisCanvas(midlet);
+		gameCanvas = new TetrisGame(midlet);
 	}
 
 	public void showMainMenu() {
