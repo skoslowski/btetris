@@ -42,7 +42,7 @@ implements CommandListener {
 		this.midlet=midlet;
 		
 		StringItem sItem = new StringItem(null,
-				"scriptris2\n"+
+				"BTetris\n"+
 				"\n"+
 				"A free j2me tetris (R) clone with bluetooth multiplayer support\n"+
 				"\n"+

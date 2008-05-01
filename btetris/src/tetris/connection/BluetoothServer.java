@@ -35,13 +35,10 @@ public class BluetoothServer extends BluetoothConnection {
 
 	protected L2CAPConnection getConnection() throws IOException {
 
-		System.out.println("getConnection");
 		server = (L2CAPConnectionNotifier) Connector.open(url);
 		L2CAPConnection connection = server.acceptAndOpen();
-		System.out.println("after acc and open");
 		server.close();
 		server=null;
-		System.out.println("returning");
 		return connection;
 	}
 
