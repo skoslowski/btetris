@@ -66,7 +66,6 @@ public abstract class BluetoothConnection extends Thread {
 	}
 	
 	public synchronized void stop() {
-		//send(Protocol.DISCONNECT);
 		running = false;
 	}
 	

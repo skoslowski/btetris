@@ -27,8 +27,8 @@ public class TetrisField {
 	}
 
 	private void newBrick() {
-		brick = (nextBrick != null)? nextBrick : Brick.getRandomBrick((TetrisField.COLS / 2) - 2);
-		nextBrick = Brick.getRandomBrick((TetrisField.COLS / 2) - 2);
+		brick = (nextBrick != null)? nextBrick : Brick.getRandomBrick();
+		nextBrick = Brick.getRandomBrick();
 
 		if (brickCollisionCheck(brick)) {
 			midlet.endOfGame();
@@ -118,7 +118,7 @@ public class TetrisField {
 		for (int i = 0;i < b.blocks.length; i++) {
 			y = b.blocks[i].y;
 			x = b.blocks[i].x;
-			if (y >= ROWS || x < 0 || x >= COLS || rows[y].blocks[x] != null) return true;
+			if (y>=0 && (y >= ROWS || x < 0 || x >= COLS || rows[y].blocks[x] != null)) return true;
 		}
 		return false;
 	}
@@ -177,7 +177,7 @@ public class TetrisField {
 		/* draw small lines */
 		int areaHeight = blockSize * TetrisField.ROWS;
 		int areaWidth  = blockSize * TetrisField.COLS;
-		g.setColor(TetrisGame.BORDER_COLOR);
+		g.setColor(TetrisGame.GRID_COLOR);
 		for (int i = 1;i < TetrisField.COLS;i++) g.drawLine(i*blockSize, 0,i*blockSize, areaHeight);
 		for (int i = 1;i < TetrisField.ROWS;i++) g.drawLine(0, i*blockSize, areaWidth, i*blockSize);
 

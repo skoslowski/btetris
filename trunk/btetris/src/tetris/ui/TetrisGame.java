@@ -9,8 +9,8 @@ import tetris.tetris.TetrisField;
 
 public class TetrisGame extends Canvas implements Runnable {
 
-	public static final int FRAME_COLOR = 0xFFFFFF, ACTIVE_BORDER_COLOR = 0xAAAAAA; 
-	public static final int PASSIVE_BORDER_COLOR = 0x777777, BORDER_COLOR = 0x111111;
+	public static final int FRAME_COLOR = 0xFFFFFF, ACTIVE_BORDER_COLOR = 0xCCCCCC; 
+	public static final int PASSIVE_BORDER_COLOR = 0xAAAAAA, GRID_COLOR = 0x101010;
 
 	private static final int DEFAULT_SPEED = 800;
 	private int blockSize=0;
@@ -18,7 +18,7 @@ public class TetrisGame extends Canvas implements Runnable {
 	private static final int GAME_WON = 1, GAME_LOST = 2, GAME_NORMAL = 3 ;
 	private int gameState;
 	private boolean falling;
-	private int opponentGameHeight=-1;
+	private int opponentGameHeight=0;
 
 	private TetrisMIDlet midlet;
 	private TetrisField field;
@@ -33,14 +33,16 @@ public class TetrisGame extends Canvas implements Runnable {
 	public void reset() {
 		field = new TetrisField(midlet);
 		gameState = GAME_NORMAL;
+		opponentGameHeight=0;
 		falling = false;
 		repaint();
 	}
 
 	public void setOpponentsGameHeight(int height) {
-		opponentGameHeight=height;
+		opponentGameHeight=Math.min(TetrisField.ROWS,Math.max(0, height));
+		System.out.println("height: "+height+"  "+opponentGameHeight);
 	}
-	
+
 	public void run() {
 		System.out.println("Game Thread started");
 
@@ -77,11 +79,11 @@ public class TetrisGame extends Canvas implements Runnable {
 					}	
 
 				} catch (InterruptedException e) {
-					
+
 				} catch (IllegalArgumentException e) {
 					Thread.yield();
 				}
-				
+
 			}
 		}
 		System.out.println("Game Thread done");
@@ -106,6 +108,7 @@ public class TetrisGame extends Canvas implements Runnable {
 	/* show won-game screen */
 	public void showWon() {
 		gameState = TetrisGame.GAME_WON;
+		opponentGameHeight=TetrisField.ROWS;
 		repaint();
 	}
 
@@ -117,8 +120,8 @@ public class TetrisGame extends Canvas implements Runnable {
 		if(gameState == TetrisGame.GAME_NORMAL) {
 			if(keyCode == keyCodes[0] || keyCode==-3) field.brickTransition(TetrisField.LEFT);
 			if(keyCode == keyCodes[1] || keyCode==-4) field.brickTransition(TetrisField.RIGHT);
-			if(keyCode == keyCodes[2] || keyCode==-1) field.brickTransition(TetrisField.ROTATE_LEFT);
-			if(keyCode == keyCodes[3]) 				  field.brickTransition(TetrisField.ROTATE_RIGHT);
+			if(keyCode == keyCodes[2]) 				  field.brickTransition(TetrisField.ROTATE_LEFT);
+			if(keyCode == keyCodes[3] || keyCode==-1) field.brickTransition(TetrisField.ROTATE_RIGHT);
 			if(keyCode == keyCodes[4] || keyCode==-2) setFalling(true);
 			if(keyCode == keyCodes[5]) 				  field.brickTransition(TetrisField.HARDDROP);
 		}
@@ -144,8 +147,7 @@ public class TetrisGame extends Canvas implements Runnable {
 		if(keyCode == midlet.settings.keys[4] || keyCode==-2) setFalling(false);
 	}
 
-	/* try to get the maximum out of available space
-	 * add 3 COLS for Preview*/
+	/* try to get the maximum out of available space */
 	private int getBestBlockSize(int w, int h) {
 		int blockSize = w / (3+TetrisField.COLS);
 		if (blockSize * TetrisField.ROWS > h) blockSize = h / TetrisField.ROWS;
@@ -158,36 +160,34 @@ public class TetrisGame extends Canvas implements Runnable {
 		g.setColor(0x000000);
 		g.fillRect(0, 0, getWidth(), getHeight());
 
-		/*-------------- SCORE --------------*/
-		int scoreHeight = midlet.score.paint(g, midlet.gameType != TetrisMIDlet.SINGLE);
-
 		/* --------------FIELD AREA-------------- */
-
 		/* get best Size for blocks*/
-		if (blockSize == 0) blockSize = getBestBlockSize(getWidth()-3-11, getHeight()-2-scoreHeight);
+		if (blockSize == 0) blockSize = getBestBlockSize(getWidth()-3-11, getHeight()-2);
 
-		g.translate(1, (1+scoreHeight)+(getHeight()-(1+ scoreHeight)-blockSize*TetrisField.ROWS)/2);
+		g.translate(1, (getHeight()-blockSize*TetrisField.ROWS)/2);
 		field.paint(g, blockSize);
 
 		/* Won/Lost message */
 		int fontAnchorX = blockSize * (TetrisField.COLS / 2);
 		int fontAnchorY = blockSize * (TetrisField.ROWS / 2);
-		
+
 		if (gameState == TetrisGame.GAME_LOST)
 			drawCenteredTextBox(g, fontAnchorX, fontAnchorY,"You lost!");
 		if (gameState == TetrisGame.GAME_WON)
 			drawCenteredTextBox(g, fontAnchorX, fontAnchorY,"You won!");	
 
 
-		/*------------GAMEHEIGHT AREA---------------*/
 		g.translate(blockSize * TetrisField.COLS, 0);
-		g.setColor(FRAME_COLOR);
-		g.drawRect(0, 0, 10, TetrisField.ROWS*blockSize);
-		g.setColor(ACTIVE_BORDER_COLOR);
-		g.fillRect(2, (TetrisField.ROWS-opponentGameHeight)*blockSize, 7, opponentGameHeight*blockSize);
-		
+		/*------------GAMEHEIGHT AREA---------------*/
+		if(midlet.gameType != TetrisMIDlet.SINGLE) {
+			g.setColor(FRAME_COLOR);
+			g.drawRect(0, 0, 10, TetrisField.ROWS*blockSize);
+			g.setColor(ACTIVE_BORDER_COLOR);
+			g.fillRect(2, (TetrisField.ROWS-opponentGameHeight)*blockSize+1, 7, opponentGameHeight*blockSize-1);
+			g.translate(11, 0);
+		}
+
 		/*--------------PREVIEW AREA----------------*/
-		g.translate(11, 0);
 		int previewTranslate[] = {g.getTranslateX(), g.getTranslateY()};
 		// Center Preview area!
 		g.translate((getWidth() - g.getTranslateX() - 4*blockSize)/2,0);
@@ -208,14 +208,14 @@ public class TetrisGame extends Canvas implements Runnable {
 		g.setColor(FRAME_COLOR);
 		g.drawRect(0, 0, 4*blockSize, 4*blockSize);              
 
-		/*------------------STATS AREA--------------------*/
+		/*------------------SCORE AREA--------------------*/
 		// reset to preview area
 		g.translate(previewTranslate[0]-g.getTranslateX(), previewTranslate[1]-g.getTranslateY());
 		// center + move down
-		g.translate((getWidth() - g.getTranslateX())/2, (3+1)*blockSize+5);
-		
-		midlet.score.paintStats(g, midlet.gameType != TetrisMIDlet.SINGLE);
-		
+		g.translate(0, (3+1)*blockSize+5);
+		g.translate((getWidth() - g.getTranslateX())/2,0);
+		midlet.score.paint(g, midlet.gameType != TetrisMIDlet.SINGLE);
+
 		/*--------------INCOMING ROW ALERT----------------*/
 
 		g.translate(0 - g.getTranslateX(), 0 - g.getTranslateY());

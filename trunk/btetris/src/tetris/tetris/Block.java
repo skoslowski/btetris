@@ -26,10 +26,12 @@ public class Block {
 	}
 
 	public void paint(Graphics g, int blockSize) {
-		g.setColor(color);
-		g.fillRect(x*blockSize,y*blockSize,blockSize, blockSize);
-		g.setColor(TetrisGame.PASSIVE_BORDER_COLOR);
-		g.drawRect(x*blockSize,y*blockSize,blockSize, blockSize);
+		if(y>=0){
+			g.setColor(color);
+			g.fillRect(x*blockSize,y*blockSize,blockSize, blockSize);
+			g.setColor(TetrisGame.PASSIVE_BORDER_COLOR);
+			g.drawRect(x*blockSize,y*blockSize,blockSize, blockSize);
+		}
 	}
 
 }

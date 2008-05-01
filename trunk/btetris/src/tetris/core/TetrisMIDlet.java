@@ -66,7 +66,6 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 	}
 
 	public void connectToServer(String url) {
-		System.out.println("connecting: "+url);
 		bt = new BluetoothClient(url,this);
 		bt.start();
 	}
@@ -102,8 +101,10 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 			vibrate(200);
 			break;
 		case Protocol.GAME_HEIHGT:
-			int gameh = (int)b[1];
-			System.out.println("GameHeight: "+gameh);
+			if(b.length>=2) {
+				int gameh = (int)b[1];
+				gui.gameCanvas.setOpponentsGameHeight(gameh);
+			}
 			break;
 		case Protocol.PAUSE_GAME:
 			pauseGame();
@@ -133,25 +134,18 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 		if (gametype == SINGLE) {
 			gui.showTetrisCanvas();
 			gui.gameCanvas.start();
+			
 		} else {
-
-			//if (bt != null) bt.stop();
-
+			if (bt != null) bt.stop();
+			
 			if (gametype == MULTI_HOST) {
 				bt = new BluetoothServer(this);
 				bt.start();
-				System.out.println("started");
 				gui.showServerWaiting();
-
-				System.out.println("waitung");
 			}
 			if (gametype == MULTI_CLIENT) {
 				gui.showServerSearch();
 			}	
-			
-
-			System.out.println("done");
-
 		}
 	}
 
@@ -184,6 +178,7 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 			if(gameType == MULTI_CLIENT || gameType == MULTI_HOST) 
 				bt.send(Protocol.PAUSE_GAME);
 			gamePaused = true;
+			score.notifyPaused();
 		}
 		gui.showInGameMenu(true);
 	}
