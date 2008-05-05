@@ -203,10 +203,6 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 
 		if (gameType == MULTI_CLIENT || gameType == MULTI_HOST) {
 			bt.send(Protocol.I_LOST); /* you win! */
-		} else {
-			int rank = highscore.checkScore(score.getPoints());
-			if(rank > 0)
-				gui.showNewHighscoreMenu(rank);
 		}
 	}
 
