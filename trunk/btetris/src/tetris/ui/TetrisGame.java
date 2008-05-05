@@ -128,7 +128,12 @@ public class TetrisGame extends Canvas implements Runnable {
 			if(gameState == TetrisGame.GAME_NORMAL) {
 				midlet.pauseGame();
 			} else {
-				midlet.gui.showInGameMenu(false);
+				int rank = midlet.highscore.checkScore(midlet.score.getPoints());
+				if(rank > 0) {
+					midlet.gui.showNewHighscoreMenu(rank);
+				} else {
+					midlet.gui.showInGameMenu(false);
+				}
 			}
 		}
 
