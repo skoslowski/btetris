@@ -218,7 +218,7 @@ public class Brick {
 			}
 	};
 
-	private int type = 0, rotation = 0, xoffset = 0, yoffset = -1;
+	private int type = 0, rotation = 0, xoffset = 0, yoffset = 0;
 	public Block [] blocks = new Block[4];;
 
 	public Brick(int type, int x, int y) {
@@ -232,7 +232,7 @@ public class Brick {
 	}
 
 	public static Brick getRandomBrick() {
-		return new Brick(TetrisMIDlet.random(7), (TetrisField.COLS / 2) - 2, -1);
+		return new Brick(TetrisMIDlet.random(7), (TetrisField.COLS/2)-2, 0);
 	}
 
 	public void rotate(boolean rigth) {
@@ -271,22 +271,26 @@ public class Brick {
 		/* Draw Active Frame */
 		if(isActive) {
 			g.setColor(TetrisGame.ACTIVE_BORDER_COLOR);
-			int[][] brickMatrix = types[type][rotation];
+			int brickMatrix[][] = types[type][rotation];
 			for (int y = 0; y < 4; y++)
 				for (int x = 0; x < 4; x++)
-					if (brickMatrix[y][x] == 1 && y+yoffset>=0) {
+					if (brickMatrix[y][x] == 1 && y+yoffset>0) {
+						/* Left */
 						if(x==0 || brickMatrix[y][x-1]==0)
-							g.drawLine((x+xoffset)*blockSize, (y+yoffset)*blockSize, 
-									(x+xoffset)*blockSize, (y+1+yoffset)*blockSize);
+							g.drawLine((x+xoffset)*blockSize, (yoffset+y-1)*blockSize, 
+									(x+xoffset)*blockSize, (yoffset+y)*blockSize);
+						/* Right */
 						if(x==3 || brickMatrix[y][x+1]==0)
-							g.drawLine((x+1+xoffset)*blockSize, (y+yoffset)*blockSize, 
-									(x+1+xoffset)*blockSize, (y+1+yoffset)*blockSize);
-						if(y==0 || brickMatrix[y-1][x]==0)						
-							g.drawLine((x+  xoffset)*blockSize, (y+yoffset)*blockSize, 
-									(x+1+xoffset)*blockSize, (y+yoffset)*blockSize);
-						if(y==3 || brickMatrix[y+1][x]==0)
-							g.drawLine((x+  xoffset)*blockSize, (y+1+yoffset)*blockSize, 
-									(x+1+xoffset)*blockSize, (y+1+yoffset)*blockSize);
+							g.drawLine((x+1+xoffset)*blockSize, (yoffset+y-1)*blockSize, 
+									(x+1+xoffset)*blockSize, (yoffset+y)*blockSize);
+						/* Bottom */
+						if(y==3 || brickMatrix[y+1][x]==0)						
+							g.drawLine((x+xoffset)*blockSize, (yoffset+y)*blockSize, 
+									(x+1+xoffset)*blockSize, (yoffset+y)*blockSize);
+						/* Top */
+						if(y==0 || brickMatrix[y-1][x]==0)
+							g.drawLine((x+  xoffset)*blockSize, (yoffset+y-1)*blockSize, 
+									(x+1+xoffset)*blockSize, (yoffset+y-1)*blockSize);
 
 					}
 		}

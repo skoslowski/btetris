@@ -43,6 +43,7 @@ public class MainMenu extends List implements CommandListener {
 		append("Single Player", TetrisMIDlet.createImage("/user.png"));
 		append("Server", TetrisMIDlet.createImage("/nw.png"));
 		append("Client", TetrisMIDlet.createImage("/group.png"));
+		append("Highscore",TetrisMIDlet.createImage("/score.png"));
 		append("Settings", TetrisMIDlet.createImage("/config.png"));
 		append("Info", TetrisMIDlet.createImage("/info.png"));
 
@@ -74,9 +75,12 @@ public class MainMenu extends List implements CommandListener {
 				midlet.startGame(TetrisMIDlet.MULTI_CLIENT);
 				break;
 			case 3:
-				midlet.gui.showSettingsMenu();
+				midlet.gui.showHighscoreMenu();
 				break;
 			case 4:
+				midlet.gui.showSettingsMenu();
+				break;
+			case 5:
 				midlet.gui.showAbout();
 				break;
 			default:

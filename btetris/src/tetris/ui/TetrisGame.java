@@ -9,15 +9,15 @@ import tetris.tetris.TetrisField;
 
 public class TetrisGame extends Canvas implements Runnable {
 
-	public static final int FRAME_COLOR = 0xFFFFFF, ACTIVE_BORDER_COLOR = 0xCCCCCC; 
+	public static final int FRAME_COLOR = 0xFFFFFF, ACTIVE_BORDER_COLOR = 0xDDDDDD; 
 	public static final int PASSIVE_BORDER_COLOR = 0xAAAAAA, GRID_COLOR = 0x101010;
 
 	private static final int DEFAULT_SPEED = 800;
 	private int blockSize=0;
 
 	private static final int GAME_WON = 1, GAME_LOST = 2, GAME_NORMAL = 3 ;
-	private int gameState;
-	private boolean falling;
+	private int gameState = GAME_NORMAL;
+	private boolean falling = false;
 	private int opponentGameHeight=0;
 
 	private TetrisMIDlet midlet;
@@ -40,7 +40,6 @@ public class TetrisGame extends Canvas implements Runnable {
 
 	public void setOpponentsGameHeight(int height) {
 		opponentGameHeight=Math.min(TetrisField.ROWS,Math.max(0, height));
-		System.out.println("height: "+height+"  "+opponentGameHeight);
 	}
 
 	public void run() {
@@ -194,15 +193,15 @@ public class TetrisGame extends Canvas implements Runnable {
 		int tr_x = g.getTranslateX(), tr_y = g.getTranslateY();
 		/* Center brick in area*/
 		int x_min=10, x_max=0, y_min=10, y_max=0;
-		for(int i=0; i<field.nextBrick.blocks.length; i++) {
-			x_min = Math.min(x_min, field.nextBrick.blocks[i].x);
-			x_max = Math.max(x_max, field.nextBrick.blocks[i].x);
-			y_min = Math.min(y_min, field.nextBrick.blocks[i].y);
-			y_max = Math.max(y_max, field.nextBrick.blocks[i].y);
+		for(int i=0; i<field.getNextBrick().blocks.length; i++) {
+			x_min = Math.min(x_min, field.getNextBrick().blocks[i].x);
+			x_max = Math.max(x_max, field.getNextBrick().blocks[i].x);
+			y_min = Math.min(y_min, field.getNextBrick().blocks[i].y);
+			y_max = Math.max(y_max, field.getNextBrick().blocks[i].y);
 		}
 		g.translate(((4-(x_max-x_min+1))*blockSize)/2-x_min*blockSize, ((4-(y_max-y_min+1))*blockSize)/2);
 		/* paint nextBrick */
-		field.nextBrick.paint(g, blockSize,false);
+		field.getNextBrick().paint(g, blockSize,false);
 		/* frame */
 		g.translate(tr_x - g.getTranslateX(), tr_y - g.getTranslateY());
 		g.setColor(FRAME_COLOR);

@@ -1,4 +1,4 @@
-package tetris.core;
+package tetris.tetris;
 
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
@@ -60,6 +60,10 @@ public class Scoring {
 	
 	public int getLevel() {
 		return level;
+	}
+	
+	public long getPoints() {
+		return points;
 	}
 	
 	public void addPointsSoftDropStep() {

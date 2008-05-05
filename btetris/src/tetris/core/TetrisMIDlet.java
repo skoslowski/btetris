@@ -5,22 +5,23 @@ import javax.microedition.lcdui.*;
 import java.util.*;
 
 import tetris.connection.*;
+import tetris.tetris.Scoring;
 import tetris.ui.*;
 
 public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 
 	public static final int SINGLE = 0, MULTI_HOST = 1, MULTI_CLIENT = 2;
 	public int gameType = SINGLE;
-
 	public final String version;
+	
 	public final Settings settings;
 	public final GUI gui;
-
-	public Scoring score;
-	public Vector rowsToAdd = new Vector();
-
-	private boolean gamePaused = false;
+	public final Highscore highscore;
 	private BluetoothConnection bt = null;
+	public Scoring score;
+	
+	public Vector rowsToAdd = new Vector();
+	private boolean gamePaused = false;
 
 	private final int iconResolutions[] = {16,24,32,48};
 	public final int fontColor;
@@ -31,6 +32,7 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 	public TetrisMIDlet() {
 		settings = new Settings();
 		gui = new GUI(this);
+		highscore = new Highscore();
 
 		updateIconResolution();
 		version = getAppProperty("MIDlet-Version");
@@ -101,7 +103,7 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 			vibrate(200);
 			break;
 		case Protocol.GAME_HEIHGT:
-			if(b.length>=2) {
+			if(b.length>1) {
 				int gameh = (int)b[1];
 				gui.gameCanvas.setOpponentsGameHeight(gameh);
 			}
@@ -199,8 +201,13 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 		score.addLost();
 		vibrate(200);
 
-		if (gameType == MULTI_CLIENT || gameType == MULTI_HOST) 
+		if (gameType == MULTI_CLIENT || gameType == MULTI_HOST) {
 			bt.send(Protocol.I_LOST); /* you win! */
+		} else {
+			int rank = highscore.checkScore(score.getPoints());
+			if(rank > 0)
+				gui.showNewHighscoreMenu(rank);
+		}
 	}
 
 	/* request restart of game*/
