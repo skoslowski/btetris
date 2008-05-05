@@ -3,6 +3,8 @@ package tetris.connection;
 import java.io.IOException;
 import javax.bluetooth.L2CAPConnection;
 
+import tetris.core.Protocol;
+
 public abstract class BluetoothConnection extends Thread {
 
 	private static final int WAIT_MILLIS = 250, PING_TICKS = 20;

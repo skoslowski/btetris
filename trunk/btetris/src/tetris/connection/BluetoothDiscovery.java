@@ -45,7 +45,7 @@ public class BluetoothDiscovery implements DiscoveryListener {
 	}
 
 	public void stop() {
-		listener.bluetoothSearchLog("Terminating...\n");
+		listener.bluetoothSearchLog("\nTerminating...\n");
 
 		agent.cancelInquiry(this);
 		agent.cancelServiceSearch(transID);
@@ -125,10 +125,8 @@ public class BluetoothDiscovery implements DiscoveryListener {
 		transID=-1;
 		if(respCode==SERVICE_SEARCH_TERMINATED) {
 			listener.bluetoothSearchLog("\n...Search terminated\n");
-		} else if(respCode==SERVICE_SEARCH_ERROR) {
-			listener.bluetoothError("Search Error");
 		} else {
-			if(respCode==SERVICE_SEARCH_DEVICE_NOT_REACHABLE) {
+			if(respCode==SERVICE_SEARCH_DEVICE_NOT_REACHABLE || respCode==SERVICE_SEARCH_ERROR) {
 				listener.bluetoothSearchLog("failure\n");
 			} else if(respCode==SERVICE_SEARCH_NO_RECORDS) {
 				listener.bluetoothSearchLog("no\n");

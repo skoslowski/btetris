@@ -1,4 +1,4 @@
-package tetris.connection;
+package tetris.core;
 
 public class Protocol {
 	public static final byte ONE_LINE = (byte)0x01;

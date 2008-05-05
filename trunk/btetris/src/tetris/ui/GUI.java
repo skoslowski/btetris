@@ -27,6 +27,10 @@ public class GUI {
 		display.setCurrent(new SettingsMenu(midlet));
 	}
 	
+	public void showHighscoreMenu() {
+		display.setCurrent(new HighscoreMenu(midlet));
+	}
+	
 	public void showAbout() {
 		display.setCurrent(new AboutMenu(midlet));
 	}
@@ -69,6 +73,10 @@ public class GUI {
 	
 	public void showError(String errText) {
 		display.setCurrent(new Alert("Error",errText,null,AlertType.ERROR),new MainMenu(midlet));
+	}
+	
+	public void showNewHighscoreMenu(int rank) {
+		display.setCurrent(new NewHighscoreMenu(midlet,rank));
 	}
 	
 }
