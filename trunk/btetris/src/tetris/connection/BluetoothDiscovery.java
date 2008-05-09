@@ -116,7 +116,6 @@ public class BluetoothDiscovery implements DiscoveryListener {
 			String serverName=getFriendlyName(servRecord[i].getHostDevice());
 			String serverURL = servRecord[i].getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
 
-//			listener.bluetoothSearchLog("...found a bTetris Server.\n");
 			servers.put(serverName,new String(serverURL));
 		}
 	}

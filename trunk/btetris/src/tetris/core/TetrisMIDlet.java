@@ -2,6 +2,8 @@ package tetris.core;
 
 import javax.microedition.midlet.*;
 import javax.microedition.lcdui.*;
+
+import java.io.*;
 import java.util.*;
 
 import tetris.connection.*;
@@ -27,7 +29,7 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 	public final int fontColor;
 
 	private static int iconResolution=0;
-	private static final Random random = new Random(java.lang.System.currentTimeMillis());
+	private static final Random random = new Random(265354);
 
 	public TetrisMIDlet() {
 		settings = new Settings();
@@ -73,10 +75,10 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 	}
 
 	public void bluetoothConnected() {
-		gui.showTetrisCanvas();
 		gui.gameCanvas.start();
+		if(gameType==MULTI_HOST) restartGame();
 	}
-
+	
 	public void bluetoothDisconnected(boolean byPeer) {
 		gui.gameCanvas.stop();
 		gui.showMainMenu();
@@ -119,6 +121,20 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 			score.addWon();
 			break;
 		case Protocol.RESTART:
+			/* sync random */
+			if(settings.syncBricks) {
+				try {
+					ByteArrayInputStream bias = new ByteArrayInputStream(b);
+					DataInputStream inputStream = new DataInputStream(bias);
+					
+					inputStream.readByte();
+					long seed = inputStream.readLong();
+					if(settings.syncBricks) random.setSeed(seed);
+					
+					inputStream.close();
+					bias.close();
+				} catch (IOException e) {}
+			}
 			/* restart game */
 			restartGameStart();
 			break;
@@ -167,9 +183,10 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 		}
 	}
 	
-	/* trasmit game height to opponent*/
+	/* transmit game height to opponent*/
 	public void sendGameHeight(int myHeight) {
 		if(gameType == SINGLE) return;
+		
 		byte buf[] = {Protocol.GAME_HEIHGT,(byte)myHeight};
 		bt.send(buf);
 	}
@@ -185,7 +202,7 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 		gui.showInGameMenu(true);
 	}
 
-	/* unpause Game - notify peer */
+	/* un-pause Game - notify peer */
 	public void unpauseGame() {
 		if(gamePaused) {
 			if (gameType == MULTI_CLIENT || gameType == MULTI_HOST) 
@@ -201,16 +218,36 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 		score.addLost();
 		vibrate(200);
 
-		if (gameType == MULTI_CLIENT || gameType == MULTI_HOST) {
+		if (gameType == MULTI_CLIENT || gameType == MULTI_HOST)
 			bt.send(Protocol.I_LOST); /* you win! */
-		}
 	}
 
 	/* request restart of game*/
 	public void restartGame() {
-		if (gameType == MULTI_CLIENT || gameType == MULTI_HOST) 
-			bt.send(Protocol.RESTART); 
+		if (gameType == MULTI_CLIENT || gameType == MULTI_HOST) {
+			
+			/* Generating new seed (points for more randomness ) */
+			long seed = System.currentTimeMillis() + score.getPoints();		
+			random.setSeed(seed);
 
+			/* Transmit new seed */	
+			try {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				DataOutputStream outputStream = new DataOutputStream(baos);	
+				
+				outputStream.writeByte(Protocol.RESTART);
+				outputStream.writeLong(seed);
+				outputStream.flush();
+				bt.send(baos.toByteArray()); 
+			
+				outputStream.close();
+				baos.close();
+				
+			} catch(IOException e) {
+				bt.send(Protocol.RESTART);
+			}
+					
+		}	
 		restartGameStart();
 	}
 
@@ -252,7 +289,7 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 	}
 
 	public static int random(int size) {
-		return ((random.nextInt()&0x7FFFFFFF) + 1) % size;
+		return ((random.nextInt()&0x7FFFFFFF) + 2) % size;
 	}
 
 	public void vibrate(int millis) {

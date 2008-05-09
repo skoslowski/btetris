@@ -60,7 +60,7 @@ public class TetrisGame extends Canvas implements Runnable {
 
 				repaint();
 			}
-
+			
 			long timeTaken = System.currentTimeMillis() - startTime;
 			synchronized(this) {
 				try {

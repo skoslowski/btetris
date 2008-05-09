@@ -44,9 +44,14 @@ public class Highscore implements RecordComparator, RecordFilter {
 				while(re.hasNextElement()) {
 					try {
 						if(i < LENGTH) {
-							DataInputStream recStr = new DataInputStream(new ByteArrayInputStream(re.nextRecord()));
+							ByteArrayInputStream bais = new ByteArrayInputStream(re.nextRecord());
+							DataInputStream recStr = new DataInputStream(bais);
+							
 							names[i] = recStr.readUTF();
 							points[i]= recStr.readLong();
+							
+							recStr.close();
+							bais.close();
 						} else {
 							rs.deleteRecord(re.nextRecordId());
 						}
@@ -106,6 +111,9 @@ public class Highscore implements RecordComparator, RecordFilter {
 				outputStream.flush();
 				byte[] b = baos.toByteArray();
 
+				outputStream.close();
+				baos.close();
+				
 				rs.addRecord(b, 0, b.length);
 
 			} catch (IOException e) {
@@ -124,15 +132,25 @@ public class Highscore implements RecordComparator, RecordFilter {
 
 
 	public int compare(byte[] rec1, byte[] rec2) {
-		DataInputStream r1 = new DataInputStream(new ByteArrayInputStream(rec1));
-		DataInputStream r2 = new DataInputStream(new ByteArrayInputStream(rec2));
-
 		int points1=0, points2=0;
 		try {
+			ByteArrayInputStream bias1 = new ByteArrayInputStream(rec1);
+			DataInputStream r1 = new DataInputStream(bias1);
+			
 			r1.readUTF();
-			r2.readUTF();
 			points1 = (int)r1.readLong();
+			
+			r1.close();
+			bias1.close();
+			
+			ByteArrayInputStream bias2 = new ByteArrayInputStream(rec2);
+			DataInputStream r2 = new DataInputStream(bias2);
+			
+			r2.readUTF();
 			points2 = (int)r2.readLong();
+			
+			r2.close();
+			bias2.close();			
 		} catch (IOException e) {}
 
 		if (points1 > points2) {
