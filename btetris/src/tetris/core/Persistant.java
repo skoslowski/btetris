@@ -25,8 +25,15 @@ public abstract class Persistant {
 			try {
 				//RecordStore.deleteRecordStore(name);
 				rs = RecordStore.openRecordStore(name, true);
-				readObject(new DataInputStream(new ByteArrayInputStream(rs.getRecord(1))));
-
+				
+				ByteArrayInputStream bais = new ByteArrayInputStream(rs.getRecord(1));
+				DataInputStream inputStream = new DataInputStream(bais);
+				
+				readObject(inputStream);
+				
+				inputStream.close();
+				bais.close();
+				
 			} catch (IOException e) {
 
 			} finally {
@@ -44,12 +51,16 @@ public abstract class Persistant {
 			RecordStore rs = null;
 			try {
 				rs = RecordStore.openRecordStore(name, true);
+				
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				DataOutputStream outputStream = new DataOutputStream(baos);			
 
 				writeObject(outputStream);
 				outputStream.flush();
 				byte[] b = baos.toByteArray();
+				
+				outputStream.close();
+				baos.close();
 				
 				if(rs.getNumRecords() == 0) {
 					rs.addRecord(b, 0, b.length);

@@ -171,7 +171,7 @@ public class TetrisField {
 	
 	private int getGameHeight() {
 		for(int y=ROWS;y >= 0; y--) {
-			if(rows[y].isEmpty()) return ROWS-y-1;
+			if(rows[y].isEmpty()) return ROWS-y;
 		}
 		return ROWS;
 	}

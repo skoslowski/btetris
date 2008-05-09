@@ -14,6 +14,7 @@ public class SettingsMenu extends Form implements CommandListener,ItemStateListe
 		Canvas.KEY_STAR, Canvas.KEY_POUND};
 	
 	private final Gauge fallingSpeedGauge;
+	private final ChoiceGroup syncBricksCheck;
 	
 	private final Command store;
 	private final TetrisMIDlet midlet;
@@ -28,7 +29,13 @@ public class SettingsMenu extends Form implements CommandListener,ItemStateListe
 			keyFields[i] = new KeyItem(labels[i],midlet.settings.keys[i],midlet.fontColor);
 			append(keyFields[i]);
 		}	
-
+		
+		syncBricksCheck = new ChoiceGroup("Sync Bricks", Choice.EXCLUSIVE);
+		syncBricksCheck.append("On", null);
+		syncBricksCheck.append("Off", null);
+		syncBricksCheck.setSelectedIndex((midlet.settings.syncBricks)?0:1, true);
+		append(syncBricksCheck);
+		
 		fallingSpeedGauge = new Gauge("Softdrop speed",true,5,midlet.settings.fallingSpeed);
 		append(fallingSpeedGauge);
 		
@@ -48,6 +55,8 @@ public class SettingsMenu extends Form implements CommandListener,ItemStateListe
 			
 			midlet.settings.fallingSpeed = fallingSpeedGauge.getValue();
 			
+			midlet.settings.syncBricks = (syncBricksCheck.getSelectedIndex()==0)?true:false;
+			
 			midlet.settings.save();
 		}
 		midlet.gui.showMainMenu();
@@ -64,9 +73,6 @@ public class SettingsMenu extends Form implements CommandListener,ItemStateListe
 					break;
 				}
 		} 
-//		else if (Gauge.class.isInstance(item)) {
-//			if( ((Gauge)item).getValue() == 0) ((Gauge)item).setValue(1);
-//		}
 	}
 
 	private class KeyItem extends CustomItem {
@@ -95,7 +101,7 @@ public class SettingsMenu extends Form implements CommandListener,ItemStateListe
 		}
 
 		public int getMinContentWidth() {
-			return (Font.getDefaultFont()).stringWidth("Rotate right");
+			return (Font.getDefaultFont()).stringWidth("Rotate left key");
 		}
 
 		public int getPrefContentHeight(int width) {
@@ -103,7 +109,7 @@ public class SettingsMenu extends Form implements CommandListener,ItemStateListe
 		}
 
 		public int getPrefContentWidth(int height) {
-			return (Font.getDefaultFont()).stringWidth("Rotate right")+2;
+			return (Font.getDefaultFont()).stringWidth("Rotate left key")+2;
 		}
 
 		public void paint(Graphics g, int w, int h) {
