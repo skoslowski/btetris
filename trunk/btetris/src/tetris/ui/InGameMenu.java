@@ -75,10 +75,6 @@ implements CommandListener {
 				midlet.stopGame();
 				midlet.gui.showMainMenu();
 				break;
-			case 2:
-				midlet.stopGame();
-				midlet.quit();
-				break;
 			default:
 				midlet.quit();
 			}
