@@ -13,7 +13,7 @@ public class SettingsMenu extends Form implements CommandListener,ItemStateListe
 		Canvas.KEY_NUM4, Canvas.KEY_NUM5, Canvas.KEY_NUM6, Canvas.KEY_NUM7, Canvas.KEY_NUM8, Canvas.KEY_NUM9, 
 		Canvas.KEY_STAR, Canvas.KEY_POUND};
 	
-	private final Gauge fallingSpeedGauge;
+	private final Gauge fallingSpeedGauge, transtionSpeedGauge;
 	private final ChoiceGroup syncBricksCheck;
 	
 	private final Command store;
@@ -37,7 +37,10 @@ public class SettingsMenu extends Form implements CommandListener,ItemStateListe
 		append(syncBricksCheck);
 		
 		fallingSpeedGauge = new Gauge("Softdrop speed",true,5,midlet.settings.fallingSpeed);
-		append(fallingSpeedGauge);
+		append(fallingSpeedGauge);	
+		
+		transtionSpeedGauge = new Gauge("Transition speed",true,4,midlet.settings.transitionSpeed);
+		append(transtionSpeedGauge);
 		
 		store=new Command("Store", Command.OK, 1);
 		addCommand(store);
@@ -54,6 +57,8 @@ public class SettingsMenu extends Form implements CommandListener,ItemStateListe
 				midlet.settings.keys[i] = keyFields[i].keyCode;
 			
 			midlet.settings.fallingSpeed = fallingSpeedGauge.getValue();
+			
+			midlet.settings.transitionSpeed = transtionSpeedGauge.getValue();
 			
 			midlet.settings.syncBricks = (syncBricksCheck.getSelectedIndex()==0)?true:false;
 			

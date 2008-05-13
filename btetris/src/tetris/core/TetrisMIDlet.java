@@ -29,7 +29,7 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 	public final int fontColor;
 
 	private static int iconResolution=0;
-	private static final Random random = new Random(265354);
+	private static final Random random = new Random();
 
 	public TetrisMIDlet() {
 		settings = new Settings();
@@ -75,15 +75,20 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 	}
 
 	public void bluetoothConnected() {
-		gui.gameCanvas.start();
 		if(gameType==MULTI_HOST) restartGame();
+		/*Client waits for server to request "restart" */
 	}
 	
 	public void bluetoothDisconnected(boolean byPeer) {
-		gui.gameCanvas.stop();
-		gui.showMainMenu();
+//		gui.gameCanvas.stop();
+		
 
-		if(byPeer) bt.stop();
+		if(byPeer) {
+			bt.stop();
+			bt = null;
+		}
+		stopGame();
+		gui.showMainMenu();
 	}
 
 	public void bluetoothError(String s) {
@@ -117,6 +122,7 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 			unpauseGame();
 			break;
 		case Protocol.I_LOST:
+			gui.gameCanvas.stop();
 			gui.gameCanvas.showWon();
 			score.addWon();
 			break;
@@ -144,9 +150,10 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 	public void startGame(int gametype) {
 		this.gameType = gametype;
 
+		Scoring.resetWonLost();
 		score = new Scoring();
-		score.resetWonLost();
-		gui.gameCanvas.reset();
+		
+		gui.gameCanvas = new TetrisGame(this);
 		gamePaused = false;
 
 		if (gametype == SINGLE) {
@@ -186,7 +193,6 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 	/* transmit game height to opponent*/
 	public void sendGameHeight(int myHeight) {
 		if(gameType == SINGLE) return;
-		
 		byte buf[] = {Protocol.GAME_HEIHGT,(byte)myHeight};
 		bt.send(buf);
 	}
@@ -199,6 +205,7 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 			gamePaused = true;
 			score.notifyPaused();
 		}
+		gui.gameCanvas.stop();
 		gui.showInGameMenu(true);
 	}
 
@@ -209,11 +216,13 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 				bt.send(Protocol.UNPAUSE_GAME);
 			gamePaused = false;
 		}
+		gui.gameCanvas.start();
 		gui.showTetrisCanvas();
 	}
 
 	/* hit the ceiling */
 	public void endOfGame() {
+		gui.gameCanvas.stop();
 		gui.gameCanvas.showLost();
 		score.addLost();
 		vibrate(200);
@@ -253,17 +262,26 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 
 	/* restart the game local*/
 	public void restartGameStart() {
-		gui.gameCanvas.reset();
+		//gui.gameCanvas.reset();
+		
 		score = new Scoring();
 		rowsToAdd.removeAllElements();
+		
+		gui.gameCanvas = null;
+		gui.gameCanvas = new TetrisGame(this);
 		gui.showTetrisCanvas();
+		gui.gameCanvas.start();
 	}
 
-	/* end game */
-	public void stopGame() {		
+	/* end game before*/
+	public void stopGame() {	
 		if (bt != null) bt.stop();
 		score = null;
-		gui.gameCanvas.stop();
+		
+		if(gui.gameCanvas!=null) {
+			gui.gameCanvas.stop();
+			gui.gameCanvas=null;
+		}
 	}	
 
 	/*------------------------------------------------------------------------------*/

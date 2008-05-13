@@ -7,11 +7,11 @@ public class Settings extends Persistant {
 	
 	public int keys[]= {Canvas.KEY_NUM4, Canvas.KEY_NUM6, Canvas.KEY_NUM1, 
 			Canvas.KEY_NUM3, Canvas.KEY_NUM5, Canvas.KEY_NUM8};
-	public int fallingSpeed=4;
+	public int fallingSpeed=4, transitionSpeed=2;
 	public boolean syncBricks=true;
 
 	public Settings() {
-		super("KeySettings");
+		super("Settings");
 		load();
 	}
 	
@@ -33,7 +33,13 @@ public class Settings extends Persistant {
 			/* Backward compatibility*/
 			syncBricks=true;
 		}
-		
+				
+		try { 
+			transitionSpeed=stream.readInt(); 
+		} catch(Exception e ) {
+			/* Backward compatibility*/
+			transitionSpeed=2;
+		}
 	}
 	
 	// Save Setting to Stream	
@@ -42,6 +48,7 @@ public class Settings extends Persistant {
 			stream.writeInt(keys[i]);
 		stream.writeInt(fallingSpeed);
 		stream.writeBoolean(syncBricks);
+		stream.writeInt(transitionSpeed);
 	}
 	
 }

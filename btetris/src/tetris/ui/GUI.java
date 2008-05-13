@@ -10,7 +10,7 @@ public class GUI {
 	private final Display display;
 	private final TetrisMIDlet midlet;
 
-	public final TetrisGame gameCanvas;
+	public TetrisGame gameCanvas;
 	
 	public GUI (TetrisMIDlet midlet) {
 		this.display=Display.getDisplay(midlet);

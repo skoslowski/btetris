@@ -16,7 +16,7 @@ public class Scoring {
 	private boolean gameWasPaused=false;
 	
 	/* reset score counter */
-	public void resetWonLost() {
+	public static void resetWonLost() {
 		won = 0;
 		lost = 0;
 	}

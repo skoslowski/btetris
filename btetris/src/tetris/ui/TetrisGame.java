@@ -2,100 +2,134 @@ package tetris.ui;
 
 import javax.microedition.lcdui.*;
 
-import java.lang.String;
-
 import tetris.core.TetrisMIDlet;
 import tetris.tetris.TetrisField;
 
-public class TetrisGame extends Canvas implements Runnable {
+public class TetrisGame extends Canvas {
 
+	/* Colors */
 	public static final int FRAME_COLOR = 0xFFFFFF, ACTIVE_BORDER_COLOR = 0xDDDDDD; 
 	public static final int PASSIVE_BORDER_COLOR = 0xAAAAAA, GRID_COLOR = 0x101010;
-
-	private static final int DEFAULT_SPEED = 800;
+	/* GameStates */
+	private static final int GAME_WON = 1, GAME_LOST = 2, GAME_NORMAL = 3;
+	
 	private int blockSize=0;
-
-	private static final int GAME_WON = 1, GAME_LOST = 2, GAME_NORMAL = 3 ;
-	private int gameState = GAME_NORMAL;
-	private boolean falling = false;
 	private int opponentGameHeight=0;
+	private int gameState = GAME_NORMAL;
 
-	private TetrisMIDlet midlet;
-	private TetrisField field;
-	private volatile Thread gameThread = null;
+	private final TetrisMIDlet midlet;
+	private final TetrisField field;
 
 	public TetrisGame(TetrisMIDlet midlet) {
 		this.midlet = midlet;
 		setFullScreenMode(true);
-		reset();
-	}
-
-	public void reset() {
 		field = new TetrisField(midlet);
-		gameState = GAME_NORMAL;
-		opponentGameHeight=0;
-		falling = false;
 		repaint();
 	}
 
+	/* Thread for left-right movement */
+	private class TransitionThread extends Thread {
+		private static final long TRANSITION_SPEED = 200;
+		private int action=0;
+		public synchronized void setAction(int action) { 
+			this.action = action; 
+			notify();
+		}
+		public void run() {
+			try {
+				long timeTick=TRANSITION_SPEED-50*(midlet.settings.transitionSpeed-2);
+				while(transitionThread == Thread.currentThread()) {
+					if(!isShown()) action=0;
+					
+					if(action>0) {
+						field.brickTransition(action);
+						repaint();
+					}
+					synchronized(this) {
+						wait(timeTick);
+					}
+				}
+			} catch (InterruptedException e) {}
+		}		
+	}
+	private volatile TransitionThread transitionThread = null;
+
+	/* Thread for falling brick */
+	private class GameThread extends Thread {
+		private static final long DEFAULT_SPEED = 800;
+		private boolean falling = false;
+
+		private synchronized void setFalling(boolean falling) {
+			this.falling=falling;
+			notify();
+		}		
+		public void run() {
+			System.out.println("Game Thread started");
+
+			while (Thread.currentThread() == gameThread) { 
+				long timeTick = Math.max(DEFAULT_SPEED - (long)20*midlet.score.getLevel(),50);
+				long timeTickFalling = Math.max((timeTick*(6-midlet.settings.fallingSpeed))/20,50);
+
+				long startTime = System.currentTimeMillis();
+
+				if (isShown() && gameState == TetrisGame.GAME_NORMAL) {
+					if(!falling) {
+						field.brickTransition(TetrisField.STEP);
+					} else {
+						field.brickTransition(TetrisField.SOFTDROP);
+					}
+
+					repaint();
+				}
+
+
+				long timeTaken = System.currentTimeMillis() - startTime;
+				synchronized(this) {
+					try {
+
+						if(!falling) {
+							wait(timeTick - timeTaken);
+
+						} else {
+							wait(timeTickFalling- timeTaken);
+
+							if(!falling) {
+								wait(timeTick - (System.currentTimeMillis() - startTime));
+							}
+
+						}	
+
+					} catch (InterruptedException e) {
+
+					} catch (IllegalArgumentException e) {
+						Thread.yield();
+					}
+
+				}
+			}
+			System.out.println("Game Thread done");
+
+		}
+	}
+	private volatile GameThread gameThread = null;
+	
 	public void setOpponentsGameHeight(int height) {
 		opponentGameHeight=Math.min(TetrisField.ROWS,Math.max(0, height));
 	}
-
-	public void run() {
-		System.out.println("Game Thread started");
-
-		while (Thread.currentThread() == gameThread) { 
-			long timeTick = Math.max(DEFAULT_SPEED - (long)20*midlet.score.getLevel(),50);
-			long timeTickFalling = Math.max((timeTick*(6-midlet.settings.fallingSpeed))/20,50);
-
-			long startTime = System.currentTimeMillis();
-
-			if (isShown() && gameState == TetrisGame.GAME_NORMAL) {
-				if(!falling) {
-					field.brickTransition(TetrisField.STEP);
-				} else {
-					field.brickTransition(TetrisField.SOFTDROP);
-				}
-
-				repaint();
-			}
-			
-			long timeTaken = System.currentTimeMillis() - startTime;
-			synchronized(this) {
-				try {
-
-					if(!falling) {
-						wait(timeTick - timeTaken);
-
-					} else {
-						wait(timeTickFalling- timeTaken);
-
-						if(!falling) {
-							wait(timeTick - (System.currentTimeMillis() - startTime));
-						}
-
-					}	
-
-				} catch (InterruptedException e) {
-
-				} catch (IllegalArgumentException e) {
-					Thread.yield();
-				}
-
-			}
-		}
-		System.out.println("Game Thread done");
-
-	}
-
+	
 	public synchronized void start() {
-		gameThread = new Thread(this);
+		if (gameThread != null || transitionThread != null) stop();
+		
+		gameThread = new GameThread();
+		transitionThread = new TransitionThread();
 		gameThread.start();
+		transitionThread.start();
 	}
 
 	public synchronized void stop() {
-		gameThread = null;	
+		gameThread = null;
+		//transitionThread.setAction(0);
+		transitionThread = null;
 	}
 
 	/* show lost-game screen */
@@ -113,15 +147,19 @@ public class TetrisGame extends Canvas implements Runnable {
 
 
 	public void keyPressed(int keyCode) {
-		if(gameThread == null) return;
 		int keyCodes[] = midlet.settings.keys;
 
 		if(gameState == TetrisGame.GAME_NORMAL) {
-			if(keyCode == keyCodes[0] || keyCode==-3) field.brickTransition(TetrisField.LEFT);
-			if(keyCode == keyCodes[1] || keyCode==-4) field.brickTransition(TetrisField.RIGHT);
+			if(keyCode == keyCodes[0] || keyCode==-3) {
+				transitionThread.setAction(TetrisField.LEFT);	
+			}
+			if(keyCode == keyCodes[1] || keyCode==-4) {
+				transitionThread.setAction(TetrisField.RIGHT);	
+			}
+
 			if(keyCode == keyCodes[2]) 				  field.brickTransition(TetrisField.ROTATE_LEFT);
 			if(keyCode == keyCodes[3] || keyCode==-1) field.brickTransition(TetrisField.ROTATE_RIGHT);
-			if(keyCode == keyCodes[4] || keyCode==-2) setFalling(true);
+			if(keyCode == keyCodes[4] || keyCode==-2) gameThread.setFalling(true);
 			if(keyCode == keyCodes[5]) 				  field.brickTransition(TetrisField.HARDDROP);
 		}
 		if(keyCode==-5 || keyCode==-6) {
@@ -139,17 +177,17 @@ public class TetrisGame extends Canvas implements Runnable {
 		}
 
 		repaint();
-	}
-
-	private void setFalling(boolean falling) {
-		this.falling=falling;
-		synchronized(this) {
-			notify();
-		}
-	}
+	}	
 
 	public void keyReleased(int keyCode) {
-		if(keyCode == midlet.settings.keys[4] || keyCode==-2) setFalling(false);
+		int keyCodes[] = midlet.settings.keys;
+		
+		if(keyCode == keyCodes[4] || keyCode==-2) 
+			if(gameThread != null) gameThread.setFalling(false);
+
+		if(keyCode == keyCodes[0] || keyCode==-3 || keyCode == keyCodes[1] || keyCode==-4 || keyCode==-5 || keyCode==-6)
+			if(transitionThread != null) transitionThread.setAction(0);
+
 	}
 
 	/* try to get the maximum out of available space */
@@ -176,8 +214,10 @@ public class TetrisGame extends Canvas implements Runnable {
 		int fontAnchorX = blockSize * (TetrisField.COLS / 2);
 		int fontAnchorY = blockSize * (TetrisField.ROWS / 2);
 
-		if (gameState == TetrisGame.GAME_LOST)
-			drawCenteredTextBox(g, fontAnchorX, fontAnchorY,"You lost!");
+		if (gameState == TetrisGame.GAME_LOST) {
+			String msg = (midlet.gameType==TetrisMIDlet.SINGLE)?"Game over!":"You lost!";
+			drawCenteredTextBox(g, fontAnchorX, fontAnchorY,msg);
+		}
 		if (gameState == TetrisGame.GAME_WON)
 			drawCenteredTextBox(g, fontAnchorX, fontAnchorY,"You won!");	
 
