@@ -12,7 +12,7 @@ public class TetrisGame extends Canvas {
 	public static final int PASSIVE_BORDER_COLOR = 0xAAAAAA, GRID_COLOR = 0x101010;
 	/* GameStates */
 	private static final int GAME_WON = 1, GAME_LOST = 2, GAME_NORMAL = 3;
-	
+
 	private int blockSize=0;
 	private int opponentGameHeight=0;
 	private int gameState = GAME_NORMAL;
@@ -38,9 +38,10 @@ public class TetrisGame extends Canvas {
 		public void run() {
 			try {
 				long timeTick=TRANSITION_SPEED-50*(midlet.settings.transitionSpeed-2);
-				while(transitionThread == Thread.currentThread()) {
+
+				do {
 					if(!isShown()) action=0;
-					
+
 					if(action>0) {
 						field.brickTransition(action);
 						repaint();
@@ -48,7 +49,8 @@ public class TetrisGame extends Canvas {
 					synchronized(this) {
 						wait(timeTick);
 					}
-				}
+				} while(transitionThread == Thread.currentThread());
+					
 			} catch (InterruptedException e) {}
 		}		
 	}
@@ -112,14 +114,14 @@ public class TetrisGame extends Canvas {
 		}
 	}
 	private volatile GameThread gameThread = null;
-	
+
 	public void setOpponentsGameHeight(int height) {
 		opponentGameHeight=Math.min(TetrisField.ROWS,Math.max(0, height));
 	}
-	
+
 	public synchronized void start() {
 		if (gameThread != null || transitionThread != null) stop();
-		
+
 		gameThread = new GameThread();
 		transitionThread = new TransitionThread();
 		gameThread.start();
@@ -151,10 +153,16 @@ public class TetrisGame extends Canvas {
 
 		if(gameState == TetrisGame.GAME_NORMAL) {
 			if(keyCode == keyCodes[0] || keyCode==-3) {
-				transitionThread.setAction(TetrisField.LEFT);	
+				if(midlet.settings.transitionSpeed>0)
+					transitionThread.setAction(TetrisField.LEFT);
+				else
+					field.brickTransition(TetrisField.LEFT);	
 			}
 			if(keyCode == keyCodes[1] || keyCode==-4) {
-				transitionThread.setAction(TetrisField.RIGHT);	
+				if(midlet.settings.transitionSpeed>0)
+					transitionThread.setAction(TetrisField.RIGHT);
+				else
+					field.brickTransition(TetrisField.RIGHT);;	
 			}
 
 			if(keyCode == keyCodes[2]) 				  field.brickTransition(TetrisField.ROTATE_LEFT);
@@ -181,7 +189,7 @@ public class TetrisGame extends Canvas {
 
 	public void keyReleased(int keyCode) {
 		int keyCodes[] = midlet.settings.keys;
-		
+
 		if(keyCode == keyCodes[4] || keyCode==-2) 
 			if(gameThread != null) gameThread.setFalling(false);
 
