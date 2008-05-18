@@ -39,7 +39,7 @@ public class SettingsMenu extends Form implements CommandListener,ItemStateListe
 		fallingSpeedGauge = new Gauge("Softdrop speed",true,5,midlet.settings.fallingSpeed);
 		append(fallingSpeedGauge);	
 		
-		transtionSpeedGauge = new Gauge("Transition speed",true,4,midlet.settings.transitionSpeed);
+		transtionSpeedGauge = new Gauge("Transition speed",true,4, midlet.settings.transitionSpeed);
 		append(transtionSpeedGauge);
 		
 		store=new Command("Store", Command.OK, 1);
