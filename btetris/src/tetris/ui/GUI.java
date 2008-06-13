@@ -50,12 +50,11 @@ public class GUI {
 		display.setCurrent(a);
 	}
 	
-	public void showServerInquiry() {
-		display.setCurrent(new ServerInquiry(midlet, midlet.btDiscovery));
-	}
-	
-	public void showServerServiceSearch() {
-		display.setCurrent(new ServerServiceSearch(midlet, midlet.btDiscovery));
+	public void showServerSearch() {
+		ServerSearch serverSearch = new ServerSearch(midlet);
+		display.setCurrent(serverSearch);
+		try { Thread.sleep(200); } catch(Exception e) {}
+		serverSearch.start();
 	}
 	
 	public void showInGameMenu(boolean pausing) {
