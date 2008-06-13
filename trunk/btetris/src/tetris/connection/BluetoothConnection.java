@@ -7,6 +7,13 @@ import tetris.core.Protocol;
 
 public abstract class BluetoothConnection implements Runnable {
 
+	public interface BluetoothListener {
+		void bluetoothConnected();
+		void bluetoothReceivedEvent(byte b[]);
+		void bluetoothDisconnected(boolean wasRunning);	
+		void bluetoothError(String e);
+	}
+	
 	private static final int WAIT_MILLIS = 250, PING_TICKS = 20;
 	private volatile Thread connectionThread = null;
 

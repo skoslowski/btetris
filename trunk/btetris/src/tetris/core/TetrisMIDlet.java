@@ -10,19 +10,21 @@ import tetris.connection.*;
 import tetris.tetris.Scoring;
 import tetris.ui.*;
 
-public class TetrisMIDlet extends MIDlet implements BluetoothListener {
+public class TetrisMIDlet 
+	extends MIDlet 
+	implements BluetoothConnection.BluetoothListener 
+{
 
 	public static final int SINGLE = 0, MULTI_HOST = 1, MULTI_CLIENT = 2;
 	public int gameType = SINGLE;
 	public final String version;
 	
-	public final Settings settings;
 	public final GUI gui;
+	public final Settings settings;
 	public final Highscore highscore;
 	public Scoring score;
 	
 	private BluetoothConnection bt = null;
-	public  BluetoothDiscovery btDiscovery;
 
 	private final int iconResolutions[] = {16,24,32,48};
 	public final int fontColor;
@@ -156,13 +158,7 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 				gui.showServerWaiting();
 			
 			} else if (gametype == MULTI_CLIENT) {
-				btDiscovery = new BluetoothDiscovery();
-				
-				if(btDiscovery.checkForKnownServers()) {
-					gui.showServerServiceSearch();
-				} else {
-					gui.showServerInquiry();
-				}
+					gui.showServerSearch();
 			}	
 		}
 	}
