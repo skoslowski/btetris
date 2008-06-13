@@ -18,8 +18,9 @@ public class NewHighscoreMenu extends Form implements CommandListener, ItemState
 		name = new TextField("Name","",30,TextField.INITIAL_CAPS_WORD);
 		
 		append("Congratulations!\n" +
-				"Rank: "+rank+"\n" +
-				"Points: "+midlet.score.getPoints()
+				"\n"+
+    			"Rank: "+rank+"\n" +
+    			"Points: "+midlet.score.getPoints()
 			  );
 		append(name);
 		addCommand(back);

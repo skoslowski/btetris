@@ -1,12 +1,14 @@
 package tetris.connection;
 
-import java.util.Hashtable;
-
 public interface BluetoothSearchListener {
-	
-	void bluetoothSearchComplete(Hashtable servers);
+	void bluetoothInquiryDeviceDiscoved(String name);
+	void bluetoothInquiryTerminated();
+	void bluetoothInquiryCompleted(String[] servers);
 	
 	void bluetoothError(String e);
 	
-	void bluetoothSearchLog(String s);
+	
+	void bluetoothServiceSearchStarted(String deviceName, int transID);
+	void bluetoothServiceSearchResult (int transID, int respCode, String url);
+	
 }
