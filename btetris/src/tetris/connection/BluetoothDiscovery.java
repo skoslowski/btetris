@@ -2,62 +2,101 @@ package tetris.connection;
 
 import java.util.Vector;
 import java.util.Hashtable;
+import java.util.Enumeration;
 
 import javax.bluetooth.*;
 
 public class BluetoothDiscovery implements DiscoveryListener {
-
-	private final BluetoothSearchListener listener;
-
+	
+	public interface BluetoothServiceSearchListener {
+		void bluetoothServiceSearchStarted(String id);
+		void bluetoothServiceSearchResult (String id, int respCode, String url);
+		void bluetoothError(String e);
+	}
+	public interface BluetoothInquiryListener {
+		void bluetoothInquiryDeviceDiscoved(String name);
+		void bluetoothInquiryTerminated();
+		void bluetoothInquiryCompleted(int size);
+		void bluetoothError(String e);
+	}
+	private BluetoothServiceSearchListener serviceSearchListener=null;
+	private BluetoothInquiryListener inquiryListener=null;
+	
 	static final String UUID = "7219891290311a92282f0014a7082f09";
-	//static final int SERVER_VERSION_ID = 0x5432;
-	//private final int attrSet[] = {Bluetooth.SERVER_VERSION_ID};
 	private final int attrSet[] = null;
 	private final UUID uuidSet[] = {new UUID(0x0100), new UUID(UUID, false)};
-
+	
+	private final int maxServiceSearches;
+	
 	private DiscoveryAgent agent;
-	private Vector unsearchedRemoteDevices = new Vector();
-	private int transID = -1;
-	private Hashtable servers = new Hashtable();
+	private Vector currentRemoteDevices = new Vector();
+	private Hashtable transIDs = new Hashtable();
+	private Hashtable serviceURLs = new Hashtable();
 
-	public BluetoothDiscovery(BluetoothSearchListener listener) {
-		this.listener = listener;
+	public BluetoothDiscovery() {
+        String p = LocalDevice.getProperty("bluetooth.sd.trans.max");
+        maxServiceSearches = (p==null)?1:Integer.parseInt(p);
+
 		try {
 			agent = LocalDevice.getLocalDevice().getDiscoveryAgent();
 		} catch(BluetoothStateException e) {
-			listener.bluetoothError("Initiating Inquiry failed");
+			//listener.bluetoothError("Initiating Inquiry failed");
+			e.printStackTrace();
 		}
 	}
 
-	public void start() {
-
-		unsearchedRemoteDevices.removeAllElements();
-		servers.clear();
-
+	public boolean checkForKnownServers() {
+		currentRemoteDevices.removeAllElements();
+		boolean cached= getDevices(DiscoveryAgent.CACHED);
+		if(!cached) {
+			boolean preknown = getDevices(DiscoveryAgent.PREKNOWN);
+			if(!preknown) return false;
+		}
+		return true;
+	}
+	
+	public Hashtable getServers() {
+		if(currentRemoteDevices.size() == 0) return null;
+		
+		Hashtable servers = new Hashtable();
+		for(Enumeration e = currentRemoteDevices.elements();e.hasMoreElements();) {
+			RemoteDevice rd = (RemoteDevice)e.nextElement();
+			servers.put(rd.getBluetoothAddress(), getFriendlyName(rd));
+		}
+		return servers;
+	}
+	
+	private boolean getDevices(int type) {
+		RemoteDevice devs[] = agent.retrieveDevices(type);
+		if(devs == null || devs.length==0) return false;
+		
+		for(int i = 0;i<devs.length;i++) {
+			if(!currentRemoteDevices.contains(devs[i]))
+				currentRemoteDevices.addElement(devs[i]);
+		}
+		return true;
+	}
+	
+	/* ------------------ Inquiry Functions ------------------ */
+	
+	public void startInquiry(BluetoothInquiryListener obj) {
+		inquiryListener = obj;
+		currentRemoteDevices.removeAllElements();
 		try {
 			agent.startInquiry(DiscoveryAgent.GIAC, this);
 
-			listener.bluetoothSearchLog("Inquiry started...\n");
-
 		} catch (BluetoothStateException e) {
-			listener.bluetoothSearchLog(e.getMessage());
+			inquiryListener.bluetoothError(e.getMessage());
 		}
 	}
-
-	public void stop() {
-		listener.bluetoothSearchLog("\nTerminating...\n");
-
-		agent.cancelInquiry(this);
-		agent.cancelServiceSearch(transID);
-	}
-
+  	
 	public void deviceDiscovered(RemoteDevice remoteDevice, DeviceClass cod) {
-		boolean isPhone = true || cod.getMajorDeviceClass()==0x200;
-
-		if (isPhone && !unsearchedRemoteDevices.contains(remoteDevice)) {
-			unsearchedRemoteDevices.addElement(remoteDevice);
-
-			listener.bluetoothSearchLog(" - "+getFriendlyName(remoteDevice)+"\n");
+		boolean isPhone = cod.getMajorDeviceClass()==0x200;
+		if (isPhone && !currentRemoteDevices.contains(remoteDevice)) {
+			currentRemoteDevices.addElement(remoteDevice);
+			
+			String devName = getFriendlyName(remoteDevice);
+			inquiryListener.bluetoothInquiryDeviceDiscoved(devName);
 		}
 
 	}
@@ -65,40 +104,79 @@ public class BluetoothDiscovery implements DiscoveryListener {
 	public void inquiryCompleted(int discType) {		
 		switch(discType) {
 
-		case INQUIRY_COMPLETED:
-			listener.bluetoothSearchLog("Inquiry completed (found: "+unsearchedRemoteDevices.size()+")\n \n");
-
-			if(unsearchedRemoteDevices.isEmpty() && transID==-1) {
-				listener.bluetoothSearchLog("\nDone!\n");
-				listener.bluetoothSearchComplete(servers);
-			} else {
-				listener.bluetoothSearchLog("Searching for Games...\n");
-				startServiceSearch((RemoteDevice)unsearchedRemoteDevices.firstElement());
-			}
+		case INQUIRY_COMPLETED:				
+			inquiryListener.bluetoothInquiryCompleted(currentRemoteDevices.size());
 			break;
 
 		case INQUIRY_TERMINATED:
-			listener.bluetoothSearchLog("Inquiry terminated\n");
+			inquiryListener.bluetoothInquiryTerminated();
 			break;
 
 		case INQUIRY_ERROR:
-			listener.bluetoothError("Inquiry error\n");
+			inquiryListener.bluetoothError("Inquiry error\n");
 
 		}
 	}
-
-	private void startServiceSearch(RemoteDevice rd) {
-		try {
-			listener.bluetoothSearchLog(" - "+getFriendlyName(rd)+":");
-			unsearchedRemoteDevices.removeElement(rd);
-			transID = agent.searchServices(attrSet, uuidSet, rd, this);
-
-		} catch (Exception e) {
-			listener.bluetoothError(e.getMessage());
-			e.printStackTrace();
-		}	
+	
+	public void stopInquiry() {
+		agent.cancelInquiry(this);
 	}
 
+	/* ------------------ Service Searches ------------------ */
+	
+		
+	public void setBluetoothServiceSearchListener(BluetoothServiceSearchListener obj) {
+		serviceSearchListener = obj;
+	}
+	
+	public void startServiceSearch() {
+		if(serviceSearchListener==null) return;
+		
+		try {
+			while(transIDs.size()<maxServiceSearches && !currentRemoteDevices.isEmpty()) {
+				RemoteDevice rd =(RemoteDevice)currentRemoteDevices.firstElement();
+				int transID = agent.searchServices(attrSet, uuidSet, rd, this);
+				transIDs.put(new Integer(transID), rd.getBluetoothAddress());
+				
+				serviceSearchListener.bluetoothServiceSearchStarted(rd.getBluetoothAddress());
+				currentRemoteDevices.removeElement(rd);
+			}
+			
+		} catch (Exception e) {
+			serviceSearchListener.bluetoothError(e.getMessage());
+			e.printStackTrace();
+		}	
+		System.out.println("ServiceSearch started.");
+	}
+
+
+	public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
+		for (int i = 0; i<servRecord.length; i++) {
+			String serverURL = servRecord[i].getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
+			serviceURLs.put(new Integer(transID),serverURL);
+		}
+		System.out.println("ServiceRecord found.");
+	}
+
+	public void serviceSearchCompleted(int transID, int respCode) {
+		String btAddr = (String)transIDs.get(new Integer(transID));
+		transIDs.remove(new Integer(transID));
+		
+		System.out.println("ServiceSearch done.");
+		if(respCode!=SERVICE_SEARCH_TERMINATED) {
+			String url = (respCode==SERVICE_SEARCH_COMPLETED)?(String)serviceURLs.get(new Integer(transID)):"";
+			serviceSearchListener.bluetoothServiceSearchResult(btAddr, respCode, url);
+			startServiceSearch();
+		}
+	}
+	
+	public void stopServiceSearch() {
+	     for (Enumeration e = transIDs.elements() ; e.hasMoreElements() ;)
+	    	 agent.cancelServiceSearch(((Integer)e.nextElement()).intValue());
+	}
+	
+	/* ------------------ Misc ------------------ */
+	
 	private String getFriendlyName(RemoteDevice rd) {
 		String serverName="";
 		try {
@@ -107,39 +185,6 @@ public class BluetoothDiscovery implements DiscoveryListener {
 			serverName = rd.getBluetoothAddress();
 		}
 		return serverName; 
-	}
-
-	public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
-		System.out.println("Sevice record found");
-
-		for (int i = 0; i<servRecord.length; i++) {
-			String serverName=getFriendlyName(servRecord[i].getHostDevice());
-			String serverURL = servRecord[i].getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
-
-			servers.put(serverName,new String(serverURL));
-		}
-	}
-
-	public void serviceSearchCompleted(int transID, int respCode) {
-		transID=-1;
-		if(respCode==SERVICE_SEARCH_TERMINATED) {
-			listener.bluetoothSearchLog("\n...Search terminated\n");
-		} else {
-			if(respCode==SERVICE_SEARCH_DEVICE_NOT_REACHABLE || respCode==SERVICE_SEARCH_ERROR) {
-				listener.bluetoothSearchLog("failure\n");
-			} else if(respCode==SERVICE_SEARCH_NO_RECORDS) {
-				listener.bluetoothSearchLog("no\n");
-			} else if(respCode==SERVICE_SEARCH_COMPLETED) {
-				listener.bluetoothSearchLog("yes\n");
-			}
-			
-			if(unsearchedRemoteDevices.isEmpty()) {
-				listener.bluetoothSearchLog("Search completed (found: "+servers.size()+")\n \nDone!\n");
-				listener.bluetoothSearchComplete(servers);
-			} else {
-				startServiceSearch((RemoteDevice)unsearchedRemoteDevices.firstElement());
-			}
-		}
 	}
 
 

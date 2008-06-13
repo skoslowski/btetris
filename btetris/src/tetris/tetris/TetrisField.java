@@ -2,7 +2,7 @@ package tetris.tetris;
 
 import javax.microedition.lcdui.Graphics;
 import java.lang.Integer;
-import java.util.Enumeration;
+import java.util.Vector;
 
 import tetris.core.TetrisMIDlet;
 import tetris.ui.TetrisGame;
@@ -12,14 +12,18 @@ public class TetrisField {
 	public static final int ROTATE_LEFT = 1, ROTATE_RIGHT = 2, LEFT = 3;
 	public static final int RIGHT = 4, SOFTDROP = 5, HARDDROP = 6, STEP=7;
 	public static final int COLS = 10, ROWS = 20;
-	
+
 	private Brick brick, nextBrick = null;  // for preview
 	private TetrisMIDlet midlet;
 	private Row rows[];
 
+	public Vector rowsToAdd; // send by peer
+
 	public TetrisField(TetrisMIDlet midlet) {
 		this.midlet = midlet;		
 		rows = new Row[ROWS+1];
+		rowsToAdd = new Vector();
+
 		for (int y = 0;y < rows.length;y++) rows[y] = new Row();
 
 		newBrick();
@@ -34,7 +38,7 @@ public class TetrisField {
 		} else {
 		}
 	}
-	
+
 	public Brick getNextBrick() {
 		return nextBrick;
 	}
@@ -85,7 +89,7 @@ public class TetrisField {
 			}
 			temp.stepback();
 			brick = temp;
-			
+
 			midlet.score.addPointsHardDrop(n-1);
 			nextPhase = true;
 
@@ -105,7 +109,7 @@ public class TetrisField {
 
 			// send new GameHeight
 			midlet.sendGameHeight(getGameHeight());
-			
+
 			// Create new Brick
 			newBrick();
 			midlet.score.addBrick();
@@ -146,29 +150,38 @@ public class TetrisField {
 				count++;
 			}
 		}
-		
+
 		return count;
 	}
 
-	private void addRandomRows() {
-		if(midlet.rowsToAdd.size() > 0) {
-			for(Enumeration counts = midlet.rowsToAdd.elements(); counts.hasMoreElements();) {
-				int holePos = TetrisMIDlet.random(COLS);
-				int count = ((Integer)counts.nextElement()).intValue();
-				/* move other rows up */
-				for (int y = 0; y <= ROWS; y++) {
-					if(y < ROWS - count+1) {
-						rows[y] = rows[y + count];
-					} else {
-						rows[y] = Row.getIncompleteRow(holePos,y);
-					}		
-					rows[y].update(y);
-				}
-			}
-			midlet.rowsToAdd.removeAllElements();
-		}
+	public void rowsToAdd(int i) {
+		rowsToAdd.addElement(new Integer(4));
 	}
 	
+	
+	private void addRandomRows() {
+		while(!rowsToAdd.isEmpty()) {
+			/* get values */
+			int holePos = TetrisMIDlet.random(COLS);
+			Object currentElement = rowsToAdd.firstElement();
+			int count = ((Integer)currentElement).intValue();
+			
+			/* move other rows up */
+			for (int y = 0; y <= ROWS; y++) {
+				if(y < ROWS - count+1) {
+					rows[y] = rows[y + count];
+				} else {
+					/* insert new row at bottom */
+					rows[y] = Row.getIncompleteRow(holePos,y);
+				}		
+				rows[y].update(y);
+			}
+			/* remove element */
+			rowsToAdd.removeElement(currentElement);
+		}
+	}
+
+
 	private int getGameHeight() {
 		for(int y=ROWS;y >= 0; y--) {
 			if(rows[y].isEmpty()) return ROWS-y;

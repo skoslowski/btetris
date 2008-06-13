@@ -19,11 +19,10 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 	public final Settings settings;
 	public final GUI gui;
 	public final Highscore highscore;
-	private BluetoothConnection bt = null;
 	public Scoring score;
 	
-	public Vector rowsToAdd = new Vector();
-	private boolean gamePaused = false;
+	private BluetoothConnection bt = null;
+	public  BluetoothDiscovery btDiscovery;
 
 	private final int iconResolutions[] = {16,24,32,48};
 	public final int fontColor;
@@ -43,31 +42,26 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 
 	public void startApp() {
 		gui.showMainMenu();
+		System.out.println("startApp");
 	}
 
 	public void pauseApp() {
-		if(gui.gameCanvas.isShown()) pauseGame();
+		System.out.println("pauseApp");
+		pauseGame(false);
 	}
 
 
 	public void destroyApp(boolean unconditional) {
 		stopGame();
+		System.out.println("stopApp");
 	}
 
-	/*------------------------------------------------------------------------------*/
-
-	public void quit() {
+	public void quit() {	
 		destroyApp(false);
 		notifyDestroyed();
 	}
 
-	public void bluetoothSearchComplete(Hashtable servers) {
-		if (servers == null || servers.isEmpty()) {
-			gui.showNoServersFound();
-		} else {
-			gui.showServerList(servers);
-		}
-	}
+	/*------------------------------BT-Stuff----------------------------------*/
 
 	public void connectToServer(String url) {
 		bt = new BluetoothClient(url,this);
@@ -80,13 +74,6 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 	}
 	
 	public void bluetoothDisconnected(boolean byPeer) {
-//		gui.gameCanvas.stop();
-		
-
-		if(byPeer) {
-			bt.stop();
-			bt = null;
-		}
 		stopGame();
 		gui.showMainMenu();
 	}
@@ -98,15 +85,15 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 	public void bluetoothReceivedEvent(byte b[]) {
 		switch (b[0]) {
 		case Protocol.ONE_LINE:
-			rowsToAdd.addElement(new Integer(1));
+			gui.gameCanvas.rowsToAdd(1);
 			vibrate(200);
 			break;
 		case Protocol.TWO_LINES:
-			rowsToAdd.addElement(new Integer(2));
+			gui.gameCanvas.rowsToAdd(2);
 			vibrate(200);
 			break;
 		case Protocol.FOUR_LINES:
-			rowsToAdd.addElement(new Integer(4));
+			gui.gameCanvas.rowsToAdd(4);
 			vibrate(200);
 			break;
 		case Protocol.GAME_HEIHGT:
@@ -116,14 +103,15 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 			}
 			break;
 		case Protocol.PAUSE_GAME:
-			pauseGame();
+			pauseGame(true);
 			break;
 		case Protocol.UNPAUSE_GAME:
-			unpauseGame();
+			unpauseGame(true);
 			break;
 		case Protocol.I_LOST:
 			gui.gameCanvas.stop();
 			gui.gameCanvas.showWon();
+			//gui.showGameOver(true);
 			score.addWon();
 			break;
 		case Protocol.RESTART:
@@ -146,6 +134,8 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 			break;
 		}
 	}
+	
+	/*----------------------------Game-Stuff----------------------------------*/
 
 	public void startGame(int gametype) {
 		this.gameType = gametype;
@@ -154,22 +144,25 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 		score = new Scoring();
 		
 		gui.gameCanvas = new TetrisGame(this);
-		gamePaused = false;
 
 		if (gametype == SINGLE) {
 			gui.showTetrisCanvas();
 			gui.gameCanvas.start();
 			
 		} else {
-			if (bt != null) bt.stop();
-			
 			if (gametype == MULTI_HOST) {
 				bt = new BluetoothServer(this);
 				bt.start();
 				gui.showServerWaiting();
-			}
-			if (gametype == MULTI_CLIENT) {
-				gui.showServerSearch();
+			
+			} else if (gametype == MULTI_CLIENT) {
+				btDiscovery = new BluetoothDiscovery();
+				
+				if(btDiscovery.checkForKnownServers()) {
+					gui.showServerServiceSearch();
+				} else {
+					gui.showServerInquiry();
+				}
 			}	
 		}
 	}
@@ -198,24 +191,28 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 	}
 	
 	/* pause Game - notify peer */
-	public void pauseGame() {
-		if(!gamePaused) {
-			if(gameType == MULTI_CLIENT || gameType == MULTI_HOST) 
-				bt.send(Protocol.PAUSE_GAME);
-			gamePaused = true;
-			score.notifyPaused();
-		}
+	public void pauseGame(boolean byPeer) {
 		gui.gameCanvas.stop();
-		gui.showInGameMenu(true);
-	}
-
-	/* un-pause Game - notify peer */
-	public void unpauseGame() {
-		if(gamePaused) {
-			if (gameType == MULTI_CLIENT || gameType == MULTI_HOST) 
-				bt.send(Protocol.UNPAUSE_GAME);
-			gamePaused = false;
+		
+		//show pause message
+		gui.gameCanvas.showPaused();
+		
+		if(!byPeer) {
+			//notify peer
+			if(gameType!=SINGLE) bt.send(Protocol.PAUSE_GAME);
+			//Show in game menu
+			gui.showInGameMenu(true);
 		}
+		
+		// Notify ScoreObject for rate calculation
+		score.notifyPaused();
+	}
+	
+	/* UnPause Game - notify peer */
+	public void unpauseGame(boolean byPeer) {
+		// notify peer
+		if (!byPeer && gameType!=SINGLE)  bt.send(Protocol.UNPAUSE_GAME);
+	
 		gui.gameCanvas.start();
 		gui.showTetrisCanvas();
 	}
@@ -225,6 +222,7 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 		gui.gameCanvas.stop();
 		gui.gameCanvas.showLost();
 		score.addLost();
+		//gui.showGameOver(false);
 		vibrate(200);
 
 		if (gameType == MULTI_CLIENT || gameType == MULTI_HOST)
@@ -262,26 +260,28 @@ public class TetrisMIDlet extends MIDlet implements BluetoothListener {
 
 	/* restart the game local*/
 	public void restartGameStart() {
-		//gui.gameCanvas.reset();
-		
 		score = new Scoring();
-		rowsToAdd.removeAllElements();
-		
-		gui.gameCanvas = null;
 		gui.gameCanvas = new TetrisGame(this);
 		gui.showTetrisCanvas();
 		gui.gameCanvas.start();
 	}
 
-	/* end game before*/
+	/* end game before */
 	public void stopGame() {	
-		if (bt != null) bt.stop();
-		score = null;
+		try {
+			if(gui.gameCanvas!=null) gui.gameCanvas.stop();
+			if(bt!=null) bt.stop();	
+			
+		} catch (NullPointerException e) {
+			e.printStackTrace();
 		
-		if(gui.gameCanvas!=null) {
-			gui.gameCanvas.stop();
+		} finally {
 			gui.gameCanvas=null;
-		}
+			score = null;
+			bt=null;
+			
+			System.gc();
+		}		
 	}	
 
 	/*------------------------------------------------------------------------------*/

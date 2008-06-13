@@ -9,7 +9,7 @@ public class Scoring {
 	
 	private long points = 0;
 	private int lines = 0, sendRows = 0, level = 0, bricks=0;
-	private int singles = 0, doubles = 0, triples = 0, tetris = 0;
+	private int singles = 0, doubles = 0, triples = 0, tetris = 0, lineEvents = 0;
 
 	private long lastBrick = 0;
 	private float rate = 0;
@@ -28,6 +28,7 @@ public class Scoring {
 	/* add lines */
 	public void addLines(int n) {
 		lines += n;
+		lineEvents++; 
 		level = lines/10;
 		switch (n) {
 		case 4: 

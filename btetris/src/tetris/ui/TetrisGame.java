@@ -11,7 +11,7 @@ public class TetrisGame extends Canvas {
 	public static final int FRAME_COLOR = 0xFFFFFF, ACTIVE_BORDER_COLOR = 0xDDDDDD; 
 	public static final int PASSIVE_BORDER_COLOR = 0xAAAAAA, GRID_COLOR = 0x101010;
 	/* GameStates */
-	private static final int GAME_WON = 1, GAME_LOST = 2, GAME_NORMAL = 3;
+	private static final int GAME_WON = 1, GAME_LOST = 2, GAME_NORMAL = 3, GAME_PAUSED = 4;
 
 	private int blockSize=0;
 	private int opponentGameHeight=0;
@@ -31,26 +31,25 @@ public class TetrisGame extends Canvas {
 	private class TransitionThread extends Thread {
 		private static final long TRANSITION_SPEED = 200;
 		private int action=0;
+
 		public synchronized void setAction(int action) { 
-			this.action = action; 
+			this.action = action;
 			notify();
 		}
+
 		public void run() {
 			try {
 				long timeTick=TRANSITION_SPEED-50*(midlet.settings.transitionSpeed-2);
-
 				do {
 					if(!isShown()) action=0;
-
-					if(action>0) {
-						field.brickTransition(action);
-						repaint();
-					}
 					synchronized(this) {
+						if(action>0) {
+							field.brickTransition(action);
+							repaint();
+						}
 						wait(timeTick);
 					}
 				} while(transitionThread == Thread.currentThread());
-					
 			} catch (InterruptedException e) {}
 		}		
 	}
@@ -66,41 +65,29 @@ public class TetrisGame extends Canvas {
 			notify();
 		}		
 		public void run() {
-			System.out.println("Game Thread started");
-
 			while (Thread.currentThread() == gameThread) { 
 				long timeTick = Math.max(DEFAULT_SPEED - (long)20*midlet.score.getLevel(),50);
 				long timeTickFalling = Math.max((timeTick*(6-midlet.settings.fallingSpeed))/20,50);
-
 				long startTime = System.currentTimeMillis();
 
 				if (isShown() && gameState == TetrisGame.GAME_NORMAL) {
-					if(!falling) {
+					if(!falling)
 						field.brickTransition(TetrisField.STEP);
-					} else {
+					else
 						field.brickTransition(TetrisField.SOFTDROP);
-					}
-
 					repaint();
 				}
-
 
 				long timeTaken = System.currentTimeMillis() - startTime;
 				synchronized(this) {
 					try {
-
 						if(!falling) {
 							wait(timeTick - timeTaken);
-
 						} else {
 							wait(timeTickFalling- timeTaken);
-
-							if(!falling) {
+							if(!falling) 
 								wait(timeTick - (System.currentTimeMillis() - startTime));
-							}
-
 						}	
-
 					} catch (InterruptedException e) {
 
 					} catch (IllegalArgumentException e) {
@@ -109,12 +96,14 @@ public class TetrisGame extends Canvas {
 
 				}
 			}
-			System.out.println("Game Thread done");
-
 		}
 	}
 	private volatile GameThread gameThread = null;
 
+	public void hideNotify() {
+		if(gameState == GAME_NORMAL) midlet.pauseGame(false);
+	}
+	
 	public void setOpponentsGameHeight(int height) {
 		opponentGameHeight=Math.min(TetrisField.ROWS,Math.max(0, height));
 	}
@@ -122,16 +111,38 @@ public class TetrisGame extends Canvas {
 	public synchronized void start() {
 		if (gameThread != null || transitionThread != null) stop();
 
+		gameState = GAME_NORMAL;
 		gameThread = new GameThread();
 		transitionThread = new TransitionThread();
 		gameThread.start();
 		transitionThread.start();
 	}
 
+	/* Shutdown the Game */
 	public synchronized void stop() {
-		gameThread = null;
-		//transitionThread.setAction(0);
-		transitionThread = null;
+		Thread threadToKill = null;
+
+		if(gameThread != null) {
+			try {
+				threadToKill = gameThread;
+				gameThread = null;
+				threadToKill.interrupt();
+				threadToKill.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		if(transitionThread != null) {
+			try {
+				threadToKill = transitionThread;
+				transitionThread = null;
+				threadToKill.interrupt();
+				threadToKill.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		threadToKill = null;		
 	}
 
 	/* show lost-game screen */
@@ -144,6 +155,12 @@ public class TetrisGame extends Canvas {
 	public void showWon() {
 		gameState = TetrisGame.GAME_WON;
 		opponentGameHeight=TetrisField.ROWS;
+		repaint();
+	}
+	
+	/* show paused-game screen */
+	public void showPaused() {
+		gameState = TetrisGame.GAME_PAUSED;
 		repaint();
 	}
 
@@ -171,16 +188,14 @@ public class TetrisGame extends Canvas {
 			if(keyCode == keyCodes[5]) 				  field.brickTransition(TetrisField.HARDDROP);
 		}
 		if(keyCode==-5 || keyCode==-6) {
-			if(gameState == TetrisGame.GAME_NORMAL) {
-				midlet.pauseGame();
+			if(gameState == TetrisGame.GAME_NORMAL || gameState == TetrisGame.GAME_PAUSED) {
+				midlet.pauseGame(false);
 			} else {
 				int rank = midlet.highscore.checkScore(midlet.score.getPoints());
-				if(midlet.gameType == TetrisMIDlet.SINGLE && rank > 0) {
+				if(midlet.gameType == TetrisMIDlet.SINGLE && rank > 0)
 					midlet.gui.showNewHighscoreMenu(rank);
-				} else {
+				else
 					midlet.gui.showInGameMenu(false);
-				}
-
 			}
 		}
 
@@ -193,7 +208,8 @@ public class TetrisGame extends Canvas {
 		if(keyCode == keyCodes[4] || keyCode==-2) 
 			if(gameThread != null) gameThread.setFalling(false);
 
-		if(keyCode == keyCodes[0] || keyCode==-3 || keyCode == keyCodes[1] || keyCode==-4 || keyCode==-5 || keyCode==-6)
+		if(keyCode == keyCodes[0] || keyCode==-3 || keyCode == keyCodes[1] || 
+				keyCode==-4 || keyCode==-5 || keyCode==-6)
 			if(transitionThread != null) transitionThread.setAction(0);
 
 	}
@@ -214,22 +230,24 @@ public class TetrisGame extends Canvas {
 		/* --------------FIELD AREA-------------- */
 		/* get best Size for blocks*/
 		if (blockSize == 0) blockSize = getBestBlockSize(getWidth()-3-11, getHeight()-2);
-
 		g.translate(1, (getHeight()-blockSize*TetrisField.ROWS)/2);
 		field.paint(g, blockSize);
 
-		/* Won/Lost message */
+		/* --------------Won/Lost/Paused message-------------- */
+		// Where to show
 		int fontAnchorX = blockSize * (TetrisField.COLS / 2);
 		int fontAnchorY = blockSize * (TetrisField.ROWS / 2);
-
+		// What to show
 		if (gameState == TetrisGame.GAME_LOST) {
 			String msg = (midlet.gameType==TetrisMIDlet.SINGLE)?"Game over!":"You lost!";
 			drawCenteredTextBox(g, fontAnchorX, fontAnchorY,msg);
-		}
-		if (gameState == TetrisGame.GAME_WON)
+		} else if (gameState == TetrisGame.GAME_WON) {
 			drawCenteredTextBox(g, fontAnchorX, fontAnchorY,"You won!");	
+		} else if (gameState == TetrisGame.GAME_PAUSED) {
+			drawCenteredTextBox(g, fontAnchorX, fontAnchorY,"Paused!");	
+		}
 
-
+		// Move to right edge of field
 		g.translate(blockSize * TetrisField.COLS, 0);
 		/*------------GAMEHEIGHT AREA---------------*/
 		if(midlet.gameType != TetrisMIDlet.SINGLE) {
@@ -241,10 +259,14 @@ public class TetrisGame extends Canvas {
 		}
 
 		/*--------------PREVIEW AREA----------------*/
+		
+		// Save Position for Score Area
 		int previewTranslate[] = {g.getTranslateX(), g.getTranslateY()};
+		
 		// Center Preview area!
 		g.translate((getWidth() - g.getTranslateX() - 4*blockSize)/2,0);
 		int tr_x = g.getTranslateX(), tr_y = g.getTranslateY();
+		
 		/* Center brick in area*/
 		int x_min=10, x_max=0, y_min=10, y_max=0;
 		for(int i=0; i<field.getNextBrick().blocks.length; i++) {
@@ -254,8 +276,10 @@ public class TetrisGame extends Canvas {
 			y_max = Math.max(y_max, field.getNextBrick().blocks[i].y);
 		}
 		g.translate(((4-(x_max-x_min+1))*blockSize)/2-x_min*blockSize, ((4-(y_max-y_min+1))*blockSize)/2);
+		
 		/* paint nextBrick */
 		field.getNextBrick().paint(g, blockSize,false);
+		
 		/* frame */
 		g.translate(tr_x - g.getTranslateX(), tr_y - g.getTranslateY());
 		g.setColor(FRAME_COLOR);
@@ -267,12 +291,13 @@ public class TetrisGame extends Canvas {
 		// center + move down
 		g.translate(0, (3+1)*blockSize+5);
 		g.translate((getWidth() - g.getTranslateX())/2,0);
+		// show score field
 		midlet.score.paint(g, midlet.gameType != TetrisMIDlet.SINGLE);
 
 		/*--------------INCOMING ROW ALERT----------------*/
-
+		// move to button right corner
 		g.translate(0 - g.getTranslateX(), 0 - g.getTranslateY());
-		if(midlet.rowsToAdd.size()>0) {
+		if(!field.rowsToAdd.isEmpty()) {
 			g.setColor(0xFF0000);
 			g.fillRect(getWidth()-10,getHeight()-10,8,8);
 		}
@@ -298,5 +323,7 @@ public class TetrisGame extends Canvas {
 		g.drawString(s, fontAnchorX, fontAnchorY, Graphics.TOP | Graphics.HCENTER);
 	}
 
-
+	public void rowsToAdd(int i) {
+		field.rowsToAdd(i);
+	}
 }

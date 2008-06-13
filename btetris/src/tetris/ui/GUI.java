@@ -1,7 +1,6 @@
 package tetris.ui;
 
 import javax.microedition.lcdui.*;
-import java.util.Hashtable;
 
 import tetris.core.TetrisMIDlet;
 
@@ -51,16 +50,12 @@ public class GUI {
 		display.setCurrent(a);
 	}
 	
-	public void showServerSearch() {
-		display.setCurrent(new ServerSearch(midlet));
+	public void showServerInquiry() {
+		display.setCurrent(new ServerInquiry(midlet, midlet.btDiscovery));
 	}
 	
-	public void showNoServersFound() {
-		display.setCurrent(new Alert("Multiplayer","No servers found.",null,AlertType.WARNING), new MainMenu(midlet));
-	}
-	
-	public void showServerList(Hashtable servers) {
-		display.setCurrent(new ServerList(midlet, servers));
+	public void showServerServiceSearch() {
+		display.setCurrent(new ServerServiceSearch(midlet, midlet.btDiscovery));
 	}
 	
 	public void showInGameMenu(boolean pausing) {
@@ -69,6 +64,26 @@ public class GUI {
 
 	public void showTetrisCanvas() {
 		display.setCurrent(gameCanvas);
+	}
+	
+	public void showGameOver(boolean won) {
+		String msg=(midlet.gameType==TetrisMIDlet.SINGLE)?"Game over":won?"You won":"You lost";
+		Alert a = new Alert("Game over",msg,null,AlertType.WARNING);
+		
+		a.setTimeout(Alert.FOREVER);
+		a.addCommand(new Command("Restart",Command.OK,0));
+		a.addCommand(new Command("Back",Command.BACK,1));
+		a.setCommandListener(new CommandListener() {
+			public void commandAction(Command c,Displayable d) {
+				if(c.getLabel() == "Restart") {
+					midlet.restartGame();
+				} else {
+					midlet.stopGame();
+					midlet.gui.showMainMenu();
+				}
+			}
+		});
+		display.setCurrent(a);
 	}
 	
 	public void showError(String errText) {
