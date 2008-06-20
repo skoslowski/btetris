@@ -119,7 +119,7 @@ public class TetrisGame extends Canvas {
 	}
 
 	/* Shutdown the Game */
-	public synchronized void stop() {
+	public synchronized void stop() throws NullPointerException {
 		Thread threadToKill = null;
 
 		if(gameThread != null) {
@@ -128,9 +128,7 @@ public class TetrisGame extends Canvas {
 				gameThread = null;
 				threadToKill.interrupt();
 				threadToKill.join();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			} catch (InterruptedException e) {}
 		}
 		if(transitionThread != null) {
 			try {
@@ -138,9 +136,7 @@ public class TetrisGame extends Canvas {
 				transitionThread = null;
 				threadToKill.interrupt();
 				threadToKill.join();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			} catch (InterruptedException e) {}
 		}
 		threadToKill = null;		
 	}
@@ -187,6 +183,7 @@ public class TetrisGame extends Canvas {
 			if(keyCode == keyCodes[4] || keyCode==-2) gameThread.setFalling(true);
 			if(keyCode == keyCodes[5]) 				  field.brickTransition(TetrisField.HARDDROP);
 		}
+		
 		if(keyCode==-5 || keyCode==-6) {
 			if(gameState == TetrisGame.GAME_NORMAL || gameState == TetrisGame.GAME_PAUSED) {
 				midlet.pauseGame(false);

@@ -52,7 +52,7 @@ public class BluetoothDiscovery implements DiscoveryListener {
 	public Hashtable getDevices() {
 		currentRemoteDevices.removeAllElements();
 
-		// check if there are cached oder preknown devices
+		// check if there are cached oder preKnown devices
 		boolean cached= loadDevices(DiscoveryAgent.CACHED);
 		if(!cached) {
 			boolean preknown = loadDevices(DiscoveryAgent.PREKNOWN);
@@ -69,9 +69,11 @@ public class BluetoothDiscovery implements DiscoveryListener {
 	}
 
 	private boolean loadDevices(int type) {
+		// get devices
 		RemoteDevice devices[] = agent.retrieveDevices(type);
+		// return false if no device where found.
 		if(devices == null || devices.length==0) return false;
-
+		// add devices to list
 		for(int i = 0;i<devices.length;i++) {
 			if(!currentRemoteDevices.contains(devices[i]))
 				currentRemoteDevices.addElement(devices[i]);

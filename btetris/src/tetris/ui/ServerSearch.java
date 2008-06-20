@@ -15,15 +15,19 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 	private final TetrisMIDlet midlet;
 
 	private final Command connect, back, rescan, recheck,stop;
-	private final Image notchecked,online,querying,offline;
+	
+	private static final int STATUS_ONLINE = 3, STATUS_OFFLINE = 2, STATUS_CHECKING = 1, STATUS_NOTCHECKED = 0;
+	private final Image icons[];
+	private final String status[]; 
+	
 	private final BluetoothDiscovery btDiscovery;
-
 	private Hashtable devIdToEntries;
 	private Hashtable URLs;
 
 	public ServerSearch(TetrisMIDlet midlet) {
 		super("Serverlist", List.IMPLICIT);
-
+		setFitPolicy(Choice.TEXT_WRAP_ON);
+		
 		this.midlet=midlet;
 		btDiscovery = new BluetoothDiscovery(this);
 		devIdToEntries = new Hashtable();
@@ -40,27 +44,36 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 		setCommandListener(this);
 
 		// Status icons
-		notchecked  = TetrisMIDlet.createImage("/bt.png"); 
-		online  = TetrisMIDlet.createImage("/user.png");
-		querying = TetrisMIDlet.createImage("/nw.png");
-		offline = TetrisMIDlet.createImage("/delete.png");
+		icons = new Image[4];
+		icons[STATUS_NOTCHECKED] = TetrisMIDlet.createImage("/bt.png"); 
+		icons[STATUS_CHECKING] = TetrisMIDlet.createImage("/nw.png");
+		icons[STATUS_OFFLINE] = TetrisMIDlet.createImage("/delete.png");
+		icons[STATUS_ONLINE]  = TetrisMIDlet.createImage("/user.png");
+		//Status text
+		status = new String[4];
+		status[STATUS_NOTCHECKED] = "not checked";
+		status[STATUS_CHECKING] = "checking";
+		status[STATUS_OFFLINE] = "offline";
+		status[STATUS_ONLINE] = "online";
 	}
 	
-	public void start() {
-		// Check for Devices
+	public void init() {
+		// Check for Devices0
 		Hashtable devices = btDiscovery.getDevices();
 
 		if(devices == null) {
 			// Look for Devices
 			startInquiry();
 		} else {
-			// Append Devices, map IDs to index
 			for(Enumeration e = devices.keys();e.hasMoreElements();) {
 				// Extract info
 				String id = (String)e.nextElement();
 				String name = (String)devices.get(id);
 				//add to list
-				devIdToEntries.put(id,new Integer(append(name,notchecked)));
+				int index = append(name,null);
+				changeStatus(index,STATUS_NOTCHECKED);
+				//map ID to index	
+				devIdToEntries.put(id,new Integer(index));
 			}
 
 			// remove/add commands
@@ -74,6 +87,7 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 
 	public void commandAction(Command c, Displayable d) {
 		if(c == back) {
+			btDiscovery.stopServiceSearch();
 			midlet.gui.showMainMenu();
 		
 		} else if(c == stop) {
@@ -85,7 +99,7 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 
 		} else if(c== recheck) {
 			//reset icons
-			for(int i=0;i<size();i++) set(i,getString(i),notchecked);
+			for(int i=0;i<size();i++) changeStatus(i,STATUS_NOTCHECKED);;
 			// clear URL mappings
 			URLs.clear();
 			//start searching for servers
@@ -98,6 +112,8 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 				removeCommand(back);
 				removeCommand(rescan);
 				removeCommand(recheck);
+				
+				btDiscovery.stopServiceSearch();
 				
 				String url = (String)URLs.get(new Integer(getSelectedIndex()));
 				midlet.connectToServer(url);
@@ -126,17 +142,16 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 		btDiscovery.startInquiry();
 		
 		// add Inquiry indicator
-		int index = append("Inquiry started",null);
+		int index = append("...",null);
 		changeFont(index,-1,Font.STYLE_ITALIC,Font.SIZE_SMALL);
 	}
 	
 	public void bluetoothInquiryDeviceDiscoved(String id, String name) {
-		// change inquiry indicator
-		if(size()==1) set(0,"...",null);
 		// index just before the inquiry indicator
 		int index = size()-1;
 		//add to list, map ID to index
-		this.insert(index, name, notchecked);
+		this.insert(index, name, null);
+		changeStatus(index,STATUS_NOTCHECKED);
 		devIdToEntries.put(id, new Integer(index));	
 	}
 	
@@ -170,7 +185,7 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 	public void bluetoothServiceSearchStarted(String id) {
 		// Change Icon to Querying
 		int index = idToIndex(id);
-		set(index, getString(index), querying);		
+		changeStatus(index,STATUS_CHECKING);	
 	}
 
 	public void bluetoothServiceSearchResult(String id, int respCode, String url) {
@@ -179,12 +194,12 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 			// save URL
 			URLs.put(new Integer(index), url);
 			//change icon to online
-			set(index, getString(index), online);			
+			changeStatus(index,STATUS_ONLINE);				
 			// change item font style to bold
 			changeFont(index,-1,Font.STYLE_BOLD,-1);
 		} else {
 			//change icon
-			set(index, getString(index), offline);
+			changeStatus(index,STATUS_OFFLINE);	
 		}
 	}
 	public void bluetoothServiceSearchCompleted() {
@@ -202,6 +217,15 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 		return ((Integer)index).intValue();
 	}
 
+	private void changeStatus(int index, int newStatus) {
+		String name = getString(index);
+		int position = name.indexOf("\n");
+		
+		if (position != -1) name = name.substring(0,position);
+		name += "\n"+status[newStatus];
+		set(index,name,icons[newStatus]);
+	}
+	
 	private void changeFont(int index, int face, int style, int size) {
 		Font f = getFont(index);
 		

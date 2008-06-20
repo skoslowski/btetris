@@ -35,7 +35,6 @@ public class TetrisField {
 
 		if (brickCollisionCheck(brick)) {
 			midlet.endOfGame();
-		} else {
 		}
 	}
 
@@ -155,7 +154,7 @@ public class TetrisField {
 	}
 
 	public void rowsToAdd(int i) {
-		rowsToAdd.addElement(new Integer(4));
+		rowsToAdd.addElement(new Integer(i));
 	}
 	
 	

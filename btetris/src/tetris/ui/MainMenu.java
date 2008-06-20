@@ -53,7 +53,6 @@ public class MainMenu extends List implements CommandListener {
 		addCommand(quit);
 
 		setCommandListener(this);
-
 	}
 
 	public void commandAction(Command c, Displayable d) {
