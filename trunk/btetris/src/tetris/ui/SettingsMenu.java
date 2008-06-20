@@ -24,7 +24,6 @@ public class SettingsMenu extends Form implements CommandListener,ItemStateListe
 
 		this.midlet=midlet;
 
-
 		for(int i=0; i<keyFields.length; i++) {
 			keyFields[i] = new KeyItem(labels[i],midlet.settings.keys[i],midlet.fontColor);
 			append(keyFields[i]);

@@ -140,6 +140,13 @@ public class TetrisMIDlet
 	/*----------------------------Game-Stuff----------------------------------*/
 
 	public void startGame(int gametype) {
+		// check if bluetooth is turned on
+		if (gametype != SINGLE)
+			if (!BluetoothConnection.isBluetoothOn()) {
+				gui.showError("Bluetooth is turned off");
+				return;
+			}
+			
 		this.gameType = gametype;
 
 		Scoring.resetWonLost();
@@ -152,6 +159,7 @@ public class TetrisMIDlet
 			gui.gameCanvas.start();
 			
 		} else {
+			
 			if (gametype == MULTI_HOST) {
 				bt = new BluetoothServer(this);
 				bt.start();

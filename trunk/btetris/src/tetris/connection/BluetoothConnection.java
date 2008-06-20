@@ -2,7 +2,8 @@ package tetris.connection;
 
 import java.io.IOException;
 import javax.bluetooth.L2CAPConnection;
-
+import javax.bluetooth.LocalDevice;
+import javax.bluetooth.BluetoothStateException;
 import tetris.core.Protocol;
 
 public abstract class BluetoothConnection implements Runnable {
@@ -84,16 +85,16 @@ public abstract class BluetoothConnection implements Runnable {
 		}	
 	}
 
-	public synchronized void stop() {
+	public synchronized void stop() throws NullPointerException {
 		if(connectionThread != null) {
 			connectionThread = null;
 			notify();
-
 		}
 	}
 
 	public boolean send(byte b) {
 		if (connection == null) return false;
+		
 		byte outBuf[] = {b};
 		try {
 			connection.send(outBuf);
@@ -103,6 +104,7 @@ public abstract class BluetoothConnection implements Runnable {
 		}
 		return true;
 	}	
+	
 	public boolean send(byte outBuf[]) {
 		if (connection == null) return false;
 		try {
@@ -115,4 +117,14 @@ public abstract class BluetoothConnection implements Runnable {
 	}
 
 
+	
+	public static boolean isBluetoothOn() {
+		try {
+	        LocalDevice.getLocalDevice();
+	        
+	      } catch (BluetoothStateException e) {
+	        return false; 
+	      }
+		return true;
+	}
 }
