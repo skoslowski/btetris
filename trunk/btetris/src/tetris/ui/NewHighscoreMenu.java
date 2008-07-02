@@ -14,7 +14,7 @@ public class NewHighscoreMenu extends Form implements CommandListener, ItemState
 		super("New Highscore");
 		this.midlet=midlet;
 		save = new Command("Save",Command.OK,0);
-		back = new Command("Back",Command.BACK,1);
+		back = new Command("Back",Command.OK,1);
 		name = new TextField("Name","",30,TextField.INITIAL_CAPS_WORD);
 		
 		append("Congratulations!\n" +

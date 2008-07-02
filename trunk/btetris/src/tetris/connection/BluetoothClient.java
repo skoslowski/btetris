@@ -5,7 +5,7 @@ import java.io.*;
 import javax.bluetooth.*;
 import javax.microedition.io.*;
 
-public class BluetoothClient extends BluetoothConnection {
+public class BluetoothClient extends BluetoothSocket {
 	
 	private final String url;
 
