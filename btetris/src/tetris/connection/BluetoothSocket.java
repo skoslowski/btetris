@@ -6,7 +6,7 @@ import javax.bluetooth.LocalDevice;
 import javax.bluetooth.BluetoothStateException;
 import tetris.core.Protocol;
 
-public abstract class BluetoothConnection implements Runnable {
+public abstract class BluetoothSocket implements Runnable {
 
 	public interface BluetoothListener {
 		void bluetoothConnected();
@@ -14,7 +14,7 @@ public abstract class BluetoothConnection implements Runnable {
 		void bluetoothDisconnected(boolean wasRunning);	
 		void bluetoothError(String e);
 	}
-	
+
 	private static final int WAIT_MILLIS = 250, PING_TICKS = 20;
 	private volatile Thread connectionThread = null;
 
@@ -24,7 +24,7 @@ public abstract class BluetoothConnection implements Runnable {
 
 	protected abstract L2CAPConnection getConnection() throws IOException;	
 
-	public BluetoothConnection(BluetoothListener listener) {
+	public BluetoothSocket(BluetoothListener listener) {
 		this.listener = listener;
 	}
 
@@ -49,12 +49,12 @@ public abstract class BluetoothConnection implements Runnable {
 						listener.bluetoothReceivedEvent(tmpBuf);
 					}
 				} else {
-					synchronized(this) {
-						wait(WAIT_MILLIS);
-					}
 					if(++ticksSinceLastEvent >= PING_TICKS) {
 						send(Protocol.PING);
 						ticksSinceLastEvent=0;
+					}
+					synchronized(this) {
+						wait(WAIT_MILLIS);
 					}
 				}
 			}
@@ -67,11 +67,11 @@ public abstract class BluetoothConnection implements Runnable {
 			// connection has been closed by peer
 			byPeer = true; 
 
+		} catch (NullPointerException e) {
+			byPeer = true; 
+
 		} catch (InterruptedException e) {
 
-		} catch (Exception e) {
-			listener.bluetoothError("Bluetooth Fehler: " + e.getMessage());
-			e.printStackTrace();
 		}
 		listener.bluetoothDisconnected(byPeer);
 	}
@@ -93,38 +93,39 @@ public abstract class BluetoothConnection implements Runnable {
 	}
 
 	public boolean send(byte b) {
-		if (connection == null) return false;
-		
+		if (connection == null || connectionThread==null) return false;
+
 		byte outBuf[] = {b};
 		try {
 			connection.send(outBuf);
 
-		} catch (IOException e) {
+		} catch (Exception e) {
 			return false;
 		}
 		return true;
 	}	
-	
+
 	public boolean send(byte outBuf[]) {
-		if (connection == null) return false;
+		if (connection == null || connectionThread==null) return false;
+
 		try {
 			connection.send(outBuf);
 
-		} catch (IOException e) {
+		} catch (Exception e) {
 			return false;
 		}
 		return true;
 	}
 
 
-	
+
 	public static boolean isBluetoothOn() {
 		try {
-	        LocalDevice.getLocalDevice();
-	        
-	      } catch (BluetoothStateException e) {
-	        return false; 
-	      }
+			LocalDevice.getLocalDevice();
+
+		} catch (BluetoothStateException e) {
+			return false; 
+		}
 		return true;
 	}
 }

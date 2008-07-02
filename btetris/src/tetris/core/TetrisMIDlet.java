@@ -12,7 +12,7 @@ import tetris.ui.*;
 
 public class TetrisMIDlet 
 	extends MIDlet 
-	implements BluetoothConnection.BluetoothListener 
+	implements BluetoothSocket.BluetoothListener 
 {
 
 	public static final int SINGLE = 0, MULTI_HOST = 1, MULTI_CLIENT = 2;
@@ -24,7 +24,7 @@ public class TetrisMIDlet
 	public final Highscore highscore;
 	public Scoring score;
 	
-	private BluetoothConnection bt = null;
+	private BluetoothSocket bt = null;
 
 	private final int iconResolutions[] = {16,24,32,48};
 	public final int fontColor;
@@ -54,11 +54,11 @@ public class TetrisMIDlet
 
 
 	public void destroyApp(boolean unconditional) {
+		System.out.println("stopApp");	
 		stopGame();
-		System.out.println("stopApp");
 	}
 
-	public void quit() {	
+	public void quit() {		
 		destroyApp(false);
 		notifyDestroyed();
 	}
@@ -113,7 +113,6 @@ public class TetrisMIDlet
 		case Protocol.I_LOST:
 			gui.gameCanvas.stop();
 			gui.gameCanvas.showWon();
-			//gui.showGameOver(true);
 			score.addWon();
 			break;
 		case Protocol.RESTART:
@@ -142,7 +141,7 @@ public class TetrisMIDlet
 	public void startGame(int gametype) {
 		// check if bluetooth is turned on
 		if (gametype != SINGLE)
-			if (!BluetoothConnection.isBluetoothOn()) {
+			if (!BluetoothSocket.isBluetoothOn()) {
 				gui.showError("Bluetooth is turned off");
 				return;
 			}
@@ -163,7 +162,7 @@ public class TetrisMIDlet
 			if (gametype == MULTI_HOST) {
 				bt = new BluetoothServer(this);
 				bt.start();
-				gui.showServerWaiting();
+				gui.showMultiplayerWaiting(true);
 			
 			} else if (gametype == MULTI_CLIENT) {
 					gui.showServerSearch();
@@ -311,7 +310,8 @@ public class TetrisMIDlet
 	}
 
 	public static int random(int size) {
-		return ((random.nextInt()&0x7FFFFFFF) + 2) % size;
+		//return ((random.nextInt()&0x7FFFFFFF) + 2) % size;
+		return (random.nextInt(size) + random.nextInt(3)) % size;
 	}
 
 	public void vibrate(int millis) {

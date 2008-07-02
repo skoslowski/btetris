@@ -47,7 +47,7 @@ public class MainMenu extends List implements CommandListener {
 		append("Settings", TetrisMIDlet.createImage("/config.png"));
 		append("Info", TetrisMIDlet.createImage("/info.png"));
 
-		select=new Command("Select", Command.OK, 1);
+		select=new Command("OK", Command.OK, 1);
 		quit=new Command("Exit", Command.EXIT, 2);
 		setSelectCommand(select);
 		addCommand(quit);

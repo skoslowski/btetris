@@ -3,7 +3,7 @@ package tetris.ui;
 import javax.microedition.lcdui.*;
 import tetris.core.TetrisMIDlet;
 
-public class SettingsMenu extends Form implements CommandListener,ItemStateListener  {
+public class SettingsKeysMenu extends Form implements CommandListener,ItemStateListener  {
 
 	private final KeyItem keyFields[] = new KeyItem[6];
 	
@@ -13,33 +13,18 @@ public class SettingsMenu extends Form implements CommandListener,ItemStateListe
 		Canvas.KEY_NUM4, Canvas.KEY_NUM5, Canvas.KEY_NUM6, Canvas.KEY_NUM7, Canvas.KEY_NUM8, Canvas.KEY_NUM9, 
 		Canvas.KEY_STAR, Canvas.KEY_POUND};
 	
-	private final Gauge fallingSpeedGauge, transtionSpeedGauge;
-	private final ChoiceGroup syncBricksCheck;
-	
 	private final Command store;
 	private final TetrisMIDlet midlet;
 
-	public SettingsMenu(TetrisMIDlet midlet) {
-		super("Settings");
+	public SettingsKeysMenu(TetrisMIDlet midlet) {
+		super("Settings - Keys");
 
 		this.midlet=midlet;
-
+		
 		for(int i=0; i<keyFields.length; i++) {
 			keyFields[i] = new KeyItem(labels[i],midlet.settings.keys[i],midlet.fontColor);
 			append(keyFields[i]);
 		}	
-		
-		syncBricksCheck = new ChoiceGroup("Sync Bricks", Choice.EXCLUSIVE);
-		syncBricksCheck.append("On", null);
-		syncBricksCheck.append("Off", null);
-		syncBricksCheck.setSelectedIndex((midlet.settings.syncBricks)?0:1, true);
-		append(syncBricksCheck);
-		
-		fallingSpeedGauge = new Gauge("Softdrop speed",true,5,midlet.settings.fallingSpeed);
-		append(fallingSpeedGauge);	
-		
-		transtionSpeedGauge = new Gauge("Transition speed",true,4, midlet.settings.transitionSpeed);
-		append(transtionSpeedGauge);
 		
 		store=new Command("Store", Command.OK, 1);
 		addCommand(store);
@@ -55,15 +40,13 @@ public class SettingsMenu extends Form implements CommandListener,ItemStateListe
 			for(int i=0; i<keyFields.length; i++)
 				midlet.settings.keys[i] = keyFields[i].keyCode;
 			
-			midlet.settings.fallingSpeed = fallingSpeedGauge.getValue();
-			
-			midlet.settings.transitionSpeed = transtionSpeedGauge.getValue();
-			
-			midlet.settings.syncBricks = (syncBricksCheck.getSelectedIndex()==0)?true:false;
-			
 			midlet.settings.save();
+			midlet.gui.showMainMenu();
+			
+		} else {
+			midlet.gui.showSettingsMenu();
+			
 		}
-		midlet.gui.showMainMenu();
 	}
 
 	public void itemStateChanged(Item item) {

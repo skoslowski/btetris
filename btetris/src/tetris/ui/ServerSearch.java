@@ -113,6 +113,8 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 				removeCommand(rescan);
 				removeCommand(recheck);
 				
+				midlet.gui.showMultiplayerWaiting(false);
+				
 				btDiscovery.stopServiceSearch();
 				
 				String url = (String)URLs.get(new Integer(getSelectedIndex()));

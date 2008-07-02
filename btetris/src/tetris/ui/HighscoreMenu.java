@@ -25,10 +25,10 @@ public class HighscoreMenu extends Form implements CommandListener {
 		if(scores=="") scores="(empty)";
 
 		append(scores);
-		addCommand(new Command("Back", Command.EXIT, 2));
+		addCommand(new Command("Back", Command.BACK, 2));
 		setCommandListener(this);
 	}
-	public void commandAction(Command arg0, Displayable arg1) {
+	public void commandAction(Command c, Displayable d) {
 		midlet.gui.showMainMenu();
 	}
 
