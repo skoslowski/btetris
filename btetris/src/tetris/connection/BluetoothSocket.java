@@ -86,9 +86,13 @@ public abstract class BluetoothSocket implements Runnable {
 	}
 
 	public synchronized void stop() throws NullPointerException {
+		try {
+			connection.close();
+		} catch (IOException e) {}
+
 		if(connectionThread != null) {
+			connectionThread.interrupt();
 			connectionThread = null;
-			notify();
 		}
 	}
 
