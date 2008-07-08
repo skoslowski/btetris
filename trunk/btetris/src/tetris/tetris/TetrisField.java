@@ -120,11 +120,14 @@ public class TetrisField {
 
 
 	private boolean brickCollisionCheck(Brick b) {
-		int x,y;
-		for (int i = 0;i < b.blocks.length; i++) {
+		int x=0,y=0;
+		for (int i=0; i<b.blocks.length; i++) {
+			// block coordinates
 			y = b.blocks[i].y;
 			x = b.blocks[i].x;
-			if (y>0 && (y > ROWS || x < 0 || x >= COLS || rows[y].blocks[x] != null)) return true;
+			// check if valid or overlapping with field
+			if(!(x>=0 && x<COLS &&y>=0 && y<=ROWS)) return true;
+			if(rows[y].blocks[x] != null) return true;
 		}
 		return false;
 	}

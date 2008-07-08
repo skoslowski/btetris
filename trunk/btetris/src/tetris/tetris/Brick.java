@@ -228,6 +228,7 @@ public class Brick {
 
 		for (int i = 0;i < 4;i++)
 			blocks[i] = new Block(colors[type], 0, 0);
+		
 		updateBlocks();
 	}
 
@@ -235,8 +236,8 @@ public class Brick {
 		return new Brick(TetrisMIDlet.random(7), (TetrisField.COLS/2)-2, 0);
 	}
 
-	public void rotate(boolean rigth) {
-		rotation += (!rigth)? 1 : types[type].length-1;
+	public void rotate(boolean right) {
+		rotation += (!right)? 1 : types[type].length-1;
 		rotation %= types[type].length;
 		updateBlocks();
 	}
