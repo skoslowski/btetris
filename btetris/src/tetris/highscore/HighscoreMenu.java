@@ -1,4 +1,4 @@
-package tetris.ui;
+package tetris.highscore;
 
 import javax.microedition.lcdui.*;
 

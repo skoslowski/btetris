@@ -1,6 +1,8 @@
-package tetris.core;
+package tetris.settings;
 
 import javax.microedition.lcdui.Canvas;
+
+
 import java.io.*;
 
 public class Settings extends Persistant {

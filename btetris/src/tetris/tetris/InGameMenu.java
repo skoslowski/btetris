@@ -1,4 +1,4 @@
-package tetris.ui;
+package tetris.tetris;
 
 import javax.microedition.lcdui.*;
 import tetris.core.TetrisMIDlet;

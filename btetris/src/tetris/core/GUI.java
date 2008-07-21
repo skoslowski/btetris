@@ -1,8 +1,14 @@
-package tetris.ui;
+package tetris.core;
 
 import javax.microedition.lcdui.*;
 
-import tetris.core.TetrisMIDlet;
+import tetris.connection.ServerSearch;
+import tetris.highscore.HighscoreMenu;
+import tetris.highscore.NewHighscoreMenu;
+import tetris.settings.SettingsKeysMenu;
+import tetris.settings.SettingsMenu;
+import tetris.settings.SettingsOtherMenu;
+import tetris.tetris.TetrisGame;
 
 public class GUI {
 

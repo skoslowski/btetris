@@ -1,4 +1,4 @@
-package tetris.core;
+package tetris.highscore;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
