@@ -4,7 +4,6 @@ import java.io.IOException;
 import javax.bluetooth.L2CAPConnection;
 import javax.bluetooth.LocalDevice;
 import javax.bluetooth.BluetoothStateException;
-import tetris.core.Protocol;
 
 public abstract class BluetoothSocket implements Runnable {
 

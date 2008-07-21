@@ -7,8 +7,10 @@ import java.io.*;
 import java.util.*;
 
 import tetris.connection.*;
+import tetris.highscore.Highscore;
+import tetris.settings.Settings;
 import tetris.tetris.Scoring;
-import tetris.ui.*;
+import tetris.tetris.TetrisGame;
 
 public class TetrisMIDlet 
 	extends MIDlet 

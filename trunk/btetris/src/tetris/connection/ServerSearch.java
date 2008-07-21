@@ -1,14 +1,13 @@
-package tetris.ui;
+package tetris.connection;
 
 import javax.microedition.lcdui.*;
 import javax.bluetooth.DiscoveryListener;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
-import tetris.connection.*;
 import tetris.core.TetrisMIDlet;
 
-class ServerSearch 
+public class ServerSearch 
 extends List 
 implements CommandListener, BluetoothDiscovery.BluetoothServerListener 
 {

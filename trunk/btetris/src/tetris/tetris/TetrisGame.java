@@ -1,15 +1,16 @@
-package tetris.ui;
+package tetris.tetris;
 
 import javax.microedition.lcdui.*;
 
 import tetris.core.TetrisMIDlet;
-import tetris.tetris.TetrisField;
 
 public class TetrisGame extends Canvas {
 
 	/* Colors */
-	public static final int FRAME_COLOR = 0xFFFFFF, ACTIVE_BORDER_COLOR = 0xDDDDDD; 
-	public static final int PASSIVE_BORDER_COLOR = 0xAAAAAA, GRID_COLOR = 0x101010;
+	public static final int FRAME_COLOR = 0xFFFFFF, GRID_COLOR = 0x050505;
+	public static final int GAMEHEIGHT_COLOR = 0xDDDDDD;
+	//public static final int PASSIVE_BORDER_COLOR = 0xFFFFFF, ACTIVE_BORDER_COLOR = 0xFFFFFF;
+	
 	/* GameStates */
 	private static final int GAME_WON = 1, GAME_LOST = 2, GAME_NORMAL = 3, GAME_PAUSED = 4;
 
@@ -64,7 +65,11 @@ public class TetrisGame extends Canvas {
 		private synchronized void setFalling(boolean falling) {
 			this.falling=falling;
 			notify();
-		}		
+		}
+		private synchronized void restart() {
+			this.restart = true;
+			notify();
+		}
 		public void run() {
 			try {
 				while (Thread.currentThread() == gameThread) { 
@@ -73,7 +78,6 @@ public class TetrisGame extends Canvas {
 
 					long startTime = System.currentTimeMillis();
 					if (isShown() && gameState == TetrisGame.GAME_NORMAL && !firstTime) {
-
 						if(!falling)
 							field.brickTransition(TetrisField.STEP);
 						else
@@ -81,6 +85,7 @@ public class TetrisGame extends Canvas {
 						repaint();
 					}
 					firstTime=false;
+					
 					long timeTaken = System.currentTimeMillis() - startTime;
 
 					synchronized(this) {
@@ -180,7 +185,10 @@ public class TetrisGame extends Canvas {
 			if(keyCode == keyCodes[2]) 				  field.brickTransition(TetrisField.ROTATE_LEFT);
 			if(keyCode == keyCodes[3] || keyCode==-1) field.brickTransition(TetrisField.ROTATE_RIGHT);
 			if(keyCode == keyCodes[4] || keyCode==-2) gameThread.setFalling(true);
-			if(keyCode == keyCodes[5]) 				  field.brickTransition(TetrisField.HARDDROP);
+			if(keyCode == keyCodes[5]) {
+				field.brickTransition(TetrisField.HARDDROP);
+				gameThread.restart();
+			}
 		}
 
 		if(keyCode==-5 || keyCode==-6) {
@@ -249,7 +257,7 @@ public class TetrisGame extends Canvas {
 		if(midlet.gameType != TetrisMIDlet.SINGLE) {
 			g.setColor(FRAME_COLOR);
 			g.drawRect(0, 0, 10, TetrisField.ROWS*blockSize);
-			g.setColor(ACTIVE_BORDER_COLOR);
+			g.setColor(GAMEHEIGHT_COLOR);
 			g.fillRect(2, (TetrisField.ROWS-opponentGameHeight)*blockSize+1, 7, opponentGameHeight*blockSize-1);
 			g.translate(11, 0);
 		}
@@ -274,7 +282,7 @@ public class TetrisGame extends Canvas {
 		g.translate(((4-(x_max-x_min+1))*blockSize)/2-x_min*blockSize, ((4-(y_max-y_min+1))*blockSize)/2);
 
 		/* paint nextBrick */
-		field.getNextBrick().paint(g, blockSize,false);
+		field.getNextBrick().paint(g, blockSize);
 
 		/* frame */
 		g.translate(tr_x - g.getTranslateX(), tr_y - g.getTranslateY());
@@ -289,14 +297,6 @@ public class TetrisGame extends Canvas {
 		g.translate((getWidth() - g.getTranslateX())/2,0);
 		// show score field
 		midlet.score.paint(g, midlet.gameType != TetrisMIDlet.SINGLE);
-
-		/*--------------INCOMING ROW ALERT----------------*/
-		// move to button right corner
-		g.translate(0 - g.getTranslateX(), 0 - g.getTranslateY());
-		if(!field.rowsToAdd.isEmpty()) {
-			g.setColor(0xFF0000);
-			g.fillRect(getWidth()-10,getHeight()-10,8,8);
-		}
 	}
 
 	private void drawCenteredTextBox(Graphics g, int fontAnchorX, int fontAnchorY, String s) {

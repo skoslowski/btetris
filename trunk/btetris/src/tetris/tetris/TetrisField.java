@@ -2,10 +2,10 @@ package tetris.tetris;
 
 import javax.microedition.lcdui.Graphics;
 import java.lang.Integer;
+import java.util.Enumeration;
 import java.util.Vector;
 
 import tetris.core.TetrisMIDlet;
-import tetris.ui.TetrisGame;
 
 public class TetrisField {
 
@@ -16,14 +16,13 @@ public class TetrisField {
 	private Brick brick, nextBrick = null;  // for preview
 	private TetrisMIDlet midlet;
 	private Row rows[];
-
-	public Vector rowsToAdd; // send by peer
+	private Vector rowsToAdd; // send by peer
 
 	public TetrisField(TetrisMIDlet midlet) {
-		this.midlet = midlet;		
-		rows = new Row[ROWS+1];
+		this.midlet = midlet;	
 		rowsToAdd = new Vector();
-
+	
+		rows = new Row[ROWS+1];
 		for (int y = 0;y < rows.length;y++) rows[y] = new Row();
 
 		newBrick();
@@ -32,10 +31,7 @@ public class TetrisField {
 	private void newBrick() {
 		brick = (nextBrick != null)? nextBrick : Brick.getRandomBrick();
 		nextBrick = Brick.getRandomBrick();
-
-		if (brickCollisionCheck(brick)) {
-			midlet.endOfGame();
-		}
+		if (brickCollisionCheck(brick)) midlet.endOfGame();
 	}
 
 	public Brick getNextBrick() {
@@ -43,7 +39,6 @@ public class TetrisField {
 	}
 
 	public synchronized void brickTransition(int type) {
-
 		Brick temp = brick.clone();
 		boolean nextPhase = false;
 
@@ -57,7 +52,7 @@ public class TetrisField {
 		case ROTATE_RIGHT:
 			temp.rotate(false);
 			if (!brickCollisionCheck(temp)) brick = temp;
-			break;
+			break; 
 
 		case LEFT:
 			temp.left();
@@ -88,54 +83,41 @@ public class TetrisField {
 			}
 			temp.stepback();
 			brick = temp;
-
 			midlet.score.addPointsHardDrop(n-1);
 			nextPhase = true;
 
 		}
 
 		if (nextPhase) {
-
-			addBrickToRows(brick);
+			addBrickToRows();
 			// has a row been completed?
 			int count = rowCompleteCheck();
-			// notify midlet
-			if (count > 1) midlet.multiRowCompleted(count);
-			// scoring
+			// notify MIDlet
+			if (count>1) midlet.multiRowCompleted(count);
+			// notify Scoring
 			midlet.score.addLines(count);
 			//other player sent rows
 			addRandomRows();
-
 			// send new GameHeight
 			midlet.sendGameHeight(getGameHeight());
-
 			// Create new Brick
 			newBrick();
 			midlet.score.addBrick();
-
 		}
-
 		temp = null;
 	}
 
 
 	private boolean brickCollisionCheck(Brick b) {
-		int x=0,y=0;
 		for (int i=0; i<b.blocks.length; i++) {
 			// block coordinates
-			y = b.blocks[i].y;
-			x = b.blocks[i].x;
+			int y = b.blocks[i].y;
+			int x = b.blocks[i].x;
 			// check if valid or overlapping with field
 			if(!(x>=0 && x<COLS &&y>=0 && y<=ROWS)) return true;
 			if(rows[y].blocks[x] != null) return true;
 		}
 		return false;
-	}
-
-	/* add the brick to the rows-Objects*/
-	private void addBrickToRows(Brick b) {
-		for (int i = 0;i < b.blocks.length;i++)
-			rows[b.blocks[i].y].blocks[b.blocks[i].x] = b.blocks[i];
 	}
 
 	private int rowCompleteCheck() {
@@ -152,7 +134,6 @@ public class TetrisField {
 				count++;
 			}
 		}
-
 		return count;
 	}
 
@@ -162,15 +143,14 @@ public class TetrisField {
 	
 	
 	private void addRandomRows() {
-		while(!rowsToAdd.isEmpty()) {
-			/* get values */
+		for(Enumeration e = rowsToAdd.elements(); e.hasMoreElements(); ) {
 			int holePos = TetrisMIDlet.random(COLS);
-			Object currentElement = rowsToAdd.firstElement();
-			int count = ((Integer)currentElement).intValue();
+			int count = ((Integer)e.nextElement()).intValue();
 			
 			/* move other rows up */
 			for (int y = 0; y <= ROWS; y++) {
 				if(y < ROWS - count+1) {
+					/* move rows up */
 					rows[y] = rows[y + count];
 				} else {
 					/* insert new row at bottom */
@@ -178,33 +158,41 @@ public class TetrisField {
 				}		
 				rows[y].update(y);
 			}
-			/* remove element */
-			rowsToAdd.removeElement(currentElement);
+		}
+		rowsToAdd.removeAllElements();
+	}
+	
+	/* add the brick to the rows-Object*/
+	public void addBrickToRows() {
+		for (int i = 0;i < brick.blocks.length;i++) {
+			int x = brick.blocks[i].x;
+			int y = brick.blocks[i].y;
+			rows[y].blocks[x] = brick.blocks[i];
 		}
 	}
 
-
 	private int getGameHeight() {
-		for(int y=ROWS;y >= 0; y--) {
+		for(int y=ROWS;y >= 0; y--) 
 			if(rows[y].isEmpty()) return ROWS-y;
-		}
+		
 		return ROWS;
 	}
 
 	public void paint(Graphics g, int blockSize) {
-		/* draw small lines */
 		int areaHeight = blockSize * TetrisField.ROWS;
 		int areaWidth  = blockSize * TetrisField.COLS;
+		
+		/* draw small lines */
 		g.setColor(TetrisGame.GRID_COLOR);
 		for (int i = 1;i < TetrisField.COLS;i++) g.drawLine(i*blockSize, 0,i*blockSize, areaHeight);
 		for (int i = 1;i < TetrisField.ROWS;i++) g.drawLine(0, i*blockSize, areaWidth, i*blockSize);
 
 		/* draw rows*/
-		for (int y = 1; y <= ROWS; y++)
-			rows[y].paint(g, blockSize);
+		for (int y = 1; y <= ROWS; y++) rows[y].paint(g, blockSize);
 
 		/* draw brick*/
-		brick.paint(g, blockSize,true);
+		brick.paint(g, blockSize);
+		
 		/* frame*/
 		g.setColor(TetrisGame.FRAME_COLOR);
 		g.drawRect(0, 0, areaWidth, areaHeight);

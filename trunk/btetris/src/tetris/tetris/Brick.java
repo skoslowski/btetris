@@ -3,7 +3,6 @@ package tetris.tetris;
 import javax.microedition.lcdui.Graphics;
 
 import tetris.core.TetrisMIDlet;
-import tetris.ui.TetrisGame;
 
 /* Brick-Types:
  *
@@ -33,20 +32,10 @@ import tetris.ui.TetrisGame;
  *
  */
 
-public class Brick {
-
-	private static int colors[] = {
-		0xf0f000,
-		0x00f0f0,
-		0xa000f0,
-		0xf0a000,
-		0x0000f0,
-		0xf00000,
-		0x00f000
-	};
+class Brick {
 
 	/* types[type][rotation][y][x] */
-	private int types[][][][] = {
+	private static int types[][][][] = {
 			{
 				{
 					{0, 0, 0, 0},
@@ -219,21 +208,22 @@ public class Brick {
 	};
 
 	private int type = 0, rotation = 0, xoffset = 0, yoffset = 0;
-	public Block [] blocks = new Block[4];;
+	public Block[] blocks = new Block[4];
 
-	public Brick(int type, int x, int y) {
+	
+	public static Brick getRandomBrick() {
+		return new Brick(TetrisMIDlet.random(7), (TetrisField.COLS/2)-2, 0);
+	}
+	
+	private Brick(int type, int x, int y) {
 		this.type = type % types.length;
 		this.xoffset=x;
 		this.yoffset=y;
 
 		for (int i = 0;i < 4;i++)
-			blocks[i] = new Block(colors[type], 0, 0);
-		
-		updateBlocks();
-	}
+			blocks[i] = new Block(type, 0, 0);
 
-	public static Brick getRandomBrick() {
-		return new Brick(TetrisMIDlet.random(7), (TetrisField.COLS/2)-2, 0);
+		updateBlocks();
 	}
 
 	public void rotate(boolean right) {
@@ -264,44 +254,17 @@ public class Brick {
 		xoffset++;
 		updateBlocks();
 	}
-
-	public void paint(Graphics g, int blockSize, boolean isActive) {
-		for(int i=0; i<blocks.length; i++)
-			blocks[i].paint(g, blockSize);
-
-		/* Draw Active Frame */
-		if(isActive) {
-			g.setColor(TetrisGame.ACTIVE_BORDER_COLOR);
-			int brickMatrix[][] = types[type][rotation];
-			for (int y = 0; y < 4; y++)
-				for (int x = 0; x < 4; x++)
-					if (brickMatrix[y][x] == 1 && y+yoffset>0) {
-						/* Left */
-						if(x==0 || brickMatrix[y][x-1]==0)
-							g.drawLine((x+xoffset)*blockSize, (yoffset+y-1)*blockSize, 
-									(x+xoffset)*blockSize, (yoffset+y)*blockSize);
-						/* Right */
-						if(x==3 || brickMatrix[y][x+1]==0)
-							g.drawLine((x+1+xoffset)*blockSize, (yoffset+y-1)*blockSize, 
-									(x+1+xoffset)*blockSize, (yoffset+y)*blockSize);
-						/* Bottom */
-						if(y==3 || brickMatrix[y+1][x]==0)						
-							g.drawLine((x+xoffset)*blockSize, (yoffset+y)*blockSize, 
-									(x+1+xoffset)*blockSize, (yoffset+y)*blockSize);
-						/* Top */
-						if(y==0 || brickMatrix[y-1][x]==0)
-							g.drawLine((x+  xoffset)*blockSize, (yoffset+y-1)*blockSize, 
-									(x+1+xoffset)*blockSize, (yoffset+y-1)*blockSize);
-
-					}
-		}
+	
+	/* add the brick to the rows-Object*/
+	public void addToRows(Row rows[]) {
+		for (int i = 0;i < blocks.length;i++)
+			rows[blocks[i].y].blocks[blocks[i].x] = blocks[i];
 	}
-
+	
 	/* update blocks according to
-	 * xoffset, yoffset and rotation */
+	 * xOffset, yOffset and rotation */
 	private void updateBlocks() {
-		int i = 0; /* block counter */
-
+		int i = 0;
 		for (int y = 0; y < 4; y++)
 			for (int x = 0; x < 4; x++)
 				if (types[type][rotation][y][x] == 1) {
@@ -323,5 +286,10 @@ public class Brick {
 		return b;
 	}
 
+
+	public void paint(Graphics g, int blockSize) {
+		for(int i=0; i<blocks.length; i++)
+			blocks[i].paint(g, blockSize);
+	}
 
 }

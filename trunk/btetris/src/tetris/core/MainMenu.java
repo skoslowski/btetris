@@ -1,4 +1,4 @@
-package tetris.ui;
+package tetris.core;
 /* scriptris - a free j2me tetris (R) clone with
  * bluetooth multiplayer support
  *
@@ -27,7 +27,6 @@ package tetris.ui;
 
 import javax.microedition.lcdui.*;
 
-import tetris.core.TetrisMIDlet;
 
 
 public class MainMenu extends List implements CommandListener {

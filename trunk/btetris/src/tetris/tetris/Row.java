@@ -3,7 +3,7 @@ package tetris.tetris;
 import javax.microedition.lcdui.Graphics;
 
 
-public class Row {
+class Row {	
 	public Block blocks[] = new Block[TetrisField.COLS];
 
 	public Row() {
@@ -13,7 +13,7 @@ public class Row {
 	public static Row getIncompleteRow(int holePos, int ypos) {
 		Row r = new Row();
 		for (int x = 0; x < r.blocks.length; x++)
-			r.blocks[x] = (x==holePos)? null : new Block(0x999999, x, ypos);
+			r.blocks[x] = (x==holePos)? null : new Block(7, x, ypos);
 		return r;
 	}
 	

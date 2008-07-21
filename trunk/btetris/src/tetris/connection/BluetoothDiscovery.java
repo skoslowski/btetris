@@ -26,12 +26,11 @@ public class BluetoothDiscovery implements DiscoveryListener {
 	private final UUID uuidSet[] = {new UUID(0x0100), new UUID(UUID, false)};
 
 	private final int maxServiceSearches;
-	private final Object serviceSearchCompletedEvent = new Object();
+	private final Object serviceSearchMonitor = new Object();
 	private boolean terminateServiceSearch;
 
 	private DiscoveryAgent agent;
-	//private Enumeration deviceEnum;
-	private final Vector currentRemoteDevices = new Vector();  //devices from Cache/PreKnown/Inquiry
+	private final Vector remoteDevices = new Vector();  //devices from Cache/PreKnown/Inquiry
 	private final Hashtable transIDs = new Hashtable();        //holds the transID for each Device
 	private final Hashtable serviceURLs = new Hashtable();     //cache for ServiceURLS (indexed by transID)
 
@@ -52,18 +51,18 @@ public class BluetoothDiscovery implements DiscoveryListener {
 
 	/* to receive devices */
 	public Hashtable getDevices() {
-		currentRemoteDevices.removeAllElements();
+		remoteDevices.removeAllElements();
 
 		// check if there are cached oder preKnown devices
 		boolean cached= loadDevices(DiscoveryAgent.CACHED);
 		if(!cached) {
 			boolean preknown = loadDevices(DiscoveryAgent.PREKNOWN);
-			if(!preknown || currentRemoteDevices.size()==0) return null;
+			if(!preknown || remoteDevices.size()==0) return null;
 		}
 
 		// return devices names; btAdress used as IDs
 		Hashtable devices = new Hashtable();
-		for(Enumeration e = currentRemoteDevices.elements();e.hasMoreElements();) {
+		for(Enumeration e = remoteDevices.elements();e.hasMoreElements();) {
 			RemoteDevice rd = (RemoteDevice)e.nextElement();
 			devices.put(rd.getBluetoothAddress(), getFriendlyName(rd));
 		}
@@ -77,8 +76,8 @@ public class BluetoothDiscovery implements DiscoveryListener {
 		if(devices == null || devices.length==0) return false;
 		// add devices to list
 		for(int i = 0;i<devices.length;i++) {
-			if(!currentRemoteDevices.contains(devices[i]))
-				currentRemoteDevices.addElement(devices[i]);
+			if(!remoteDevices.contains(devices[i]))
+				remoteDevices.addElement(devices[i]);
 		}
 		return true;
 	}
@@ -86,7 +85,7 @@ public class BluetoothDiscovery implements DiscoveryListener {
 	/* ------------------ Inquiry Functions ------------------ */
 
 	public void startInquiry() {
-		currentRemoteDevices.removeAllElements();
+		remoteDevices.removeAllElements();
 		try {
 			agent.startInquiry(DiscoveryAgent.GIAC, this);
 
@@ -98,8 +97,8 @@ public class BluetoothDiscovery implements DiscoveryListener {
 	public void deviceDiscovered(RemoteDevice remoteDevice, DeviceClass cod) {
 		// only add PhoneDevices
 		boolean isPhone = cod.getMajorDeviceClass()==0x200;
-		if (isPhone && !currentRemoteDevices.contains(remoteDevice)) {
-			currentRemoteDevices.addElement(remoteDevice);
+		if (isPhone && !remoteDevices.contains(remoteDevice)) {
+			remoteDevices.addElement(remoteDevice);
 			// notify listener
 			String devName = getFriendlyName(remoteDevice);
 			String id = remoteDevice.getBluetoothAddress();
@@ -112,7 +111,7 @@ public class BluetoothDiscovery implements DiscoveryListener {
 		switch(discType) {
 
 		case INQUIRY_COMPLETED:			
-			listener.bluetoothInquiryCompleted(currentRemoteDevices.size());
+			listener.bluetoothInquiryCompleted(remoteDevices.size());
 			break;
 
 		case INQUIRY_TERMINATED:
@@ -131,19 +130,14 @@ public class BluetoothDiscovery implements DiscoveryListener {
 
 	/* ------------------ Service Searches ------------------ */
 
-	public void startServiceSearch() {		
-//		if(!currentRemoteDevices.isEmpty()) {
-//		deviceEnum = currentRemoteDevices.elements();
-//		continueServiceSearch();
-//		}
-
+	public void startServiceSearch() {
 		new Thread() {
 			public void run() {
 				terminateServiceSearch = false;
 				try {
-					Enumeration deviceEnum = currentRemoteDevices.elements();
+					Enumeration deviceEnum = remoteDevices.elements();
 					while(deviceEnum.hasMoreElements() && !terminateServiceSearch) {
-						synchronized(serviceSearchCompletedEvent) {
+						synchronized(serviceSearchMonitor) {
 							try {	
 								while(transIDs.size()<maxServiceSearches) {
 									// get device
@@ -158,7 +152,7 @@ public class BluetoothDiscovery implements DiscoveryListener {
 								listener.bluetoothError(e.getMessage());
 								e.printStackTrace();
 							}
-							serviceSearchCompletedEvent.wait();
+							serviceSearchMonitor.wait();
 						}
 					}
 				} catch(InterruptedException e) {}
@@ -166,25 +160,6 @@ public class BluetoothDiscovery implements DiscoveryListener {
 			}
 		}.start();
 	}
-
-//	private void continueServiceSearch() {
-//		try {		
-//			while(transIDs.size()<maxServiceSearches && deviceEnum.hasMoreElements()) {
-//				// get device
-//				RemoteDevice rd =(RemoteDevice)deviceEnum.nextElement();
-//				// start Search
-//				int transID = agent.searchServices(attrSet, uuidSet, rd, this);				
-//				// map transID to device
-//				transIDs.put(new Integer(transID), rd.getBluetoothAddress());
-//
-//				listener.bluetoothServiceSearchStarted(rd.getBluetoothAddress());
-//
-//			}
-//		} catch (BluetoothStateException e) {
-//			listener.bluetoothError(e.getMessage());
-//			e.printStackTrace();
-//		}
-//	}
 
 
 	public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
@@ -205,26 +180,16 @@ public class BluetoothDiscovery implements DiscoveryListener {
 			String url = (respCode==SERVICE_SEARCH_COMPLETED)?(String)serviceURLs.get(new Integer(transID)):"";
 			listener.bluetoothServiceSearchResult(btAddr, respCode, url);
 			// next!
-			synchronized(serviceSearchCompletedEvent) {
-				serviceSearchCompletedEvent.notifyAll();
+			synchronized(serviceSearchMonitor) {
+				serviceSearchMonitor.notifyAll();
 			}
-			//continueServiceSearch();
 		}
-		//all done?
-//		if(!deviceEnum.hasMoreElements() && transIDs.isEmpty())
-//			listener.bluetoothServiceSearchCompleted();
 	}
 
 	public void stopServiceSearch() {
-//		new Thread() {
-//			public void run() {
-//				for (Enumeration e = transIDs.elements() ; e.hasMoreElements() ;)
-//					agent.cancelServiceSearch(((Integer)e.nextElement()).intValue());
-//			}
-//		}.start();
 		terminateServiceSearch=true;
-		synchronized(serviceSearchCompletedEvent) {
-			serviceSearchCompletedEvent.notifyAll();
+		synchronized(serviceSearchMonitor) {
+			serviceSearchMonitor.notifyAll();
 		}
 	}
 
