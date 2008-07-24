@@ -7,10 +7,8 @@ import java.io.*;
 import java.util.*;
 
 import tetris.connection.*;
-import tetris.highscore.Highscore;
 import tetris.settings.Settings;
-import tetris.tetris.Scoring;
-import tetris.tetris.TetrisGame;
+import tetris.tetris.*;
 
 public class TetrisMIDlet 
 	extends MIDlet 
@@ -22,8 +20,6 @@ public class TetrisMIDlet
 	public final String version;
 	
 	public final GUI gui;
-	public final Settings settings;
-	public final Highscore highscore;
 	public Scoring score;
 	
 	private BluetoothSocket bt = null;
@@ -35,10 +31,8 @@ public class TetrisMIDlet
 	private static final Random random = new Random();
 
 	public TetrisMIDlet() {
-		settings = new Settings();
 		gui = new GUI(this);
-		highscore = new Highscore();
-
+		
 		updateIconResolution();
 		version = getAppProperty("MIDlet-Version");
 		fontColor = Display.getDisplay(this).getColor(Display.COLOR_FOREGROUND);
@@ -119,14 +113,14 @@ public class TetrisMIDlet
 			break;
 		case Protocol.RESTART:
 			/* sync random */
-			if(settings.syncBricks) {
+			if(Settings.getInstance().syncBricks) {
 				try {
 					ByteArrayInputStream bias = new ByteArrayInputStream(b);
 					DataInputStream inputStream = new DataInputStream(bias);
 					
 					inputStream.readByte();
 					long seed = inputStream.readLong();
-					if(settings.syncBricks) random.setSeed(seed);
+					if(Settings.getInstance().syncBricks) random.setSeed(seed);
 					
 					inputStream.close();
 					bias.close();
@@ -153,7 +147,7 @@ public class TetrisMIDlet
 		Scoring.resetWonLost();
 		score = new Scoring();
 		
-		gui.gameCanvas = new TetrisGame(this);
+		gui.gameCanvas = new TetrisCanvas(this);
 
 		if (gametype == SINGLE) {
 			gui.showTetrisCanvas();
@@ -266,7 +260,7 @@ public class TetrisMIDlet
 	/* restart the game local*/
 	public void restartGameStart() {
 		score = new Scoring();
-		gui.gameCanvas = new TetrisGame(this);
+		gui.gameCanvas = new TetrisCanvas(this);
 		gui.showTetrisCanvas();
 		gui.gameCanvas.start();
 	}

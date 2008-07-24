@@ -4,7 +4,7 @@ import javax.microedition.lcdui.*;
 
 import tetris.core.TetrisMIDlet;
 
-public class SettingsMenu extends List implements CommandListener {
+class SettingsMenu extends List implements CommandListener {
 
 	private final TetrisMIDlet midlet;
 	private final Command select;
@@ -27,10 +27,10 @@ public class SettingsMenu extends List implements CommandListener {
 		if( c == select ) {
 			switch(getSelectedIndex()) {
 			case 0:
-				midlet.gui.showSettingsKeysMenu();
+				Settings.showSettingsKeysMenu(midlet);
 				break;
 			case 1:
-				midlet.gui.showSettingsOtherMenu();
+				Settings.showSettingsOtherMenu(midlet);
 				break;
 
 			}

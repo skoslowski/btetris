@@ -30,7 +30,7 @@ public class NewHighscoreMenu extends Form implements CommandListener, ItemState
 
 	public void commandAction(Command c, Displayable d) {
 		if (c==save) {
-			midlet.highscore.saveScore(name.getString(), midlet.score.getPoints());
+			Highscore.getInstance().saveScore(name.getString(), midlet.score.getPoints());
 		} 
 		midlet.gui.showInGameMenu(false);
 	}

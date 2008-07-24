@@ -1,33 +1,8 @@
 package tetris.core;
-/* scriptris - a free j2me tetris (R) clone with
- * bluetooth multiplayer support
- *
- *
- * (c) 2005-2006 Michael "ScriptKiller" Arndt
- * <scriptkiller@gmx.de>
- * http://scriptkiller.de/
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
- *
- *
- */
-
 
 import javax.microedition.lcdui.*;
-
-
+import tetris.settings.*;
+import tetris.highscore.*;
 
 public class MainMenu extends List implements CommandListener {
 
@@ -73,10 +48,10 @@ public class MainMenu extends List implements CommandListener {
 				midlet.startGame(TetrisMIDlet.MULTI_CLIENT);
 				break;
 			case 3:
-				midlet.gui.showHighscoreMenu();
+				Highscore.showHighscoreMenu(midlet);
 				break;
 			case 4:
-				midlet.gui.showSettingsMenu();
+				Settings.showSettingsMenu(midlet);
 				break;
 			case 5:
 				midlet.gui.showAbout();

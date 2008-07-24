@@ -3,9 +3,10 @@ package tetris.tetris;
 import javax.microedition.lcdui.*;
 
 import tetris.core.TetrisMIDlet;
+import tetris.settings.*;
+import tetris.highscore.*;
 
-public class TetrisGame extends Canvas {
-
+public class TetrisCanvas extends Canvas {
 	/* Colors */
 	public static final int FRAME_COLOR = 0xFFFFFF, GRID_COLOR = 0x050505;
 	public static final int GAMEHEIGHT_COLOR = 0xDDDDDD;
@@ -20,11 +21,15 @@ public class TetrisGame extends Canvas {
 
 	private final TetrisMIDlet midlet;
 	private final TetrisField field;
+	private final Settings settings;
 
-	public TetrisGame(TetrisMIDlet midlet) {
+	public TetrisCanvas(TetrisMIDlet midlet) {
 		this.midlet = midlet;
 		setFullScreenMode(true);
+		
 		field = new TetrisField(midlet);
+		settings = Settings.getInstance();
+		
 		repaint();
 	}
 
@@ -40,7 +45,7 @@ public class TetrisGame extends Canvas {
 
 		public void run() {
 			try {
-				long timeTick=TRANSITION_SPEED-50*(midlet.settings.transitionSpeed-2);
+				long timeTick=TRANSITION_SPEED-50*(settings.transitionSpeed-2);
 				do {
 					if(!isShown()) action=0;
 					synchronized(this) {
@@ -74,10 +79,10 @@ public class TetrisGame extends Canvas {
 			try {
 				while (Thread.currentThread() == gameThread) { 
 					long timeTick = Math.max(DEFAULT_SPEED - (long)30*midlet.score.getLevel(),50);
-					long timeTickFalling = Math.max((timeTick*(6-midlet.settings.fallingSpeed))/20,50);
+					long timeTickFalling = Math.max((timeTick*(6-settings.fallingSpeed))/20,50);
 
 					long startTime = System.currentTimeMillis();
-					if (isShown() && gameState == TetrisGame.GAME_NORMAL && !firstTime) {
+					if (isShown() && gameState == TetrisCanvas.GAME_NORMAL && !firstTime) {
 						if(!falling)
 							field.brickTransition(TetrisField.STEP);
 						else
@@ -147,36 +152,36 @@ public class TetrisGame extends Canvas {
 
 	/* show lost-game screen */
 	public void showLost() {
-		gameState = TetrisGame.GAME_LOST;
+		gameState = TetrisCanvas.GAME_LOST;
 		repaint();
 	}
 
 	/* show won-game screen */
 	public void showWon() {
-		gameState = TetrisGame.GAME_WON;
+		gameState = TetrisCanvas.GAME_WON;
 		opponentGameHeight=TetrisField.ROWS;
 		repaint();
 	}
 
 	/* show paused-game screen */
 	public void showPaused() {
-		gameState = TetrisGame.GAME_PAUSED;
+		gameState = TetrisCanvas.GAME_PAUSED;
 		repaint();
 	}
 
 
 	public void keyPressed(int keyCode) {
-		int keyCodes[] = midlet.settings.keys;
+		int keyCodes[] = settings.keys;
 
-		if(gameState == TetrisGame.GAME_NORMAL) {
+		if(gameState == TetrisCanvas.GAME_NORMAL) {
 			if(keyCode == keyCodes[0] || keyCode==-3) {
-				if(midlet.settings.transitionSpeed>0)
+				if(settings.transitionSpeed>0)
 					transitionThread.setAction(TetrisField.LEFT);
 				else
 					field.brickTransition(TetrisField.LEFT);	
 			}
 			if(keyCode == keyCodes[1] || keyCode==-4) {
-				if(midlet.settings.transitionSpeed>0)
+				if(settings.transitionSpeed>0)
 					transitionThread.setAction(TetrisField.RIGHT);
 				else
 					field.brickTransition(TetrisField.RIGHT);;	
@@ -192,10 +197,10 @@ public class TetrisGame extends Canvas {
 		}
 
 		if(keyCode==-5 || keyCode==-6) {
-			if(gameState == TetrisGame.GAME_NORMAL || gameState == TetrisGame.GAME_PAUSED) {
+			if(gameState == TetrisCanvas.GAME_NORMAL || gameState == TetrisCanvas.GAME_PAUSED) {
 				midlet.pauseGame(false);
 			} else {
-				int rank = midlet.highscore.checkScore(midlet.score.getPoints());
+				int rank = Highscore.getInstance().checkScore(midlet.score.getPoints());
 				if(midlet.gameType == TetrisMIDlet.SINGLE && rank > 0)
 					midlet.gui.showNewHighscoreMenu(rank);
 				else
@@ -207,7 +212,7 @@ public class TetrisGame extends Canvas {
 	}	
 
 	public void keyReleased(int keyCode) {
-		int keyCodes[] = midlet.settings.keys;
+		int keyCodes[] = settings.keys;
 
 		if(keyCode == keyCodes[4] || keyCode==-2) 
 			if(gameThread != null) gameThread.setFalling(false);
@@ -242,12 +247,12 @@ public class TetrisGame extends Canvas {
 		int fontAnchorX = blockSize * (TetrisField.COLS / 2);
 		int fontAnchorY = blockSize * (TetrisField.ROWS / 2);
 		// What to show
-		if (gameState == TetrisGame.GAME_LOST) {
+		if (gameState == TetrisCanvas.GAME_LOST) {
 			String msg = (midlet.gameType==TetrisMIDlet.SINGLE)?"Game over!":"You lost!";
 			drawCenteredTextBox(g, fontAnchorX, fontAnchorY,msg);
-		} else if (gameState == TetrisGame.GAME_WON) {
+		} else if (gameState == TetrisCanvas.GAME_WON) {
 			drawCenteredTextBox(g, fontAnchorX, fontAnchorY,"You won!");	
-		} else if (gameState == TetrisGame.GAME_PAUSED) {
+		} else if (gameState == TetrisCanvas.GAME_PAUSED) {
 			drawCenteredTextBox(g, fontAnchorX, fontAnchorY,"Paused!");	
 		}
 

@@ -7,7 +7,7 @@ import java.util.Vector;
 
 import tetris.core.TetrisMIDlet;
 
-public class TetrisField {
+class TetrisField {
 
 	public static final int ROTATE_LEFT = 1, ROTATE_RIGHT = 2, LEFT = 3;
 	public static final int RIGHT = 4, SOFTDROP = 5, HARDDROP = 6, STEP=7;
@@ -183,7 +183,7 @@ public class TetrisField {
 		int areaWidth  = blockSize * TetrisField.COLS;
 		
 		/* draw small lines */
-		g.setColor(TetrisGame.GRID_COLOR);
+		g.setColor(TetrisCanvas.GRID_COLOR);
 		for (int i = 1;i < TetrisField.COLS;i++) g.drawLine(i*blockSize, 0,i*blockSize, areaHeight);
 		for (int i = 1;i < TetrisField.ROWS;i++) g.drawLine(0, i*blockSize, areaWidth, i*blockSize);
 
@@ -194,7 +194,7 @@ public class TetrisField {
 		brick.paint(g, blockSize);
 		
 		/* frame*/
-		g.setColor(TetrisGame.FRAME_COLOR);
+		g.setColor(TetrisCanvas.FRAME_COLOR);
 		g.drawRect(0, 0, areaWidth, areaHeight);
 	}
 
