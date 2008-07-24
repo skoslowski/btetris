@@ -4,18 +4,20 @@ import javax.microedition.lcdui.*;
 
 import tetris.core.TetrisMIDlet;
 
-public class HighscoreMenu extends Form implements CommandListener {
+class HighscoreMenu extends Form implements CommandListener {
 
-	private TetrisMIDlet midlet;
+	private final TetrisMIDlet midlet;
+	private final Highscore highscore;
 
 	public HighscoreMenu(TetrisMIDlet midlet) {
 		super("Highscore");
+
 		this.midlet = midlet;
+		highscore = Highscore.getInstance();
 
 		String scores="";
-
-		String names [] = midlet.highscore.getNames();
-		long points[] = midlet.highscore.getPoints();
+		String names [] = highscore.getNames();
+		long points[] = highscore.getPoints();
 
 			for(int i = 0; i<names.length; i++) {
 				if(points[i]>=0)

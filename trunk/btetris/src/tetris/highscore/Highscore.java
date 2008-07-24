@@ -5,18 +5,35 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import javax.microedition.lcdui.Display;
 
 import javax.microedition.rms.*;
 
-public class Highscore implements RecordComparator, RecordFilter {
-	private final static int LENGTH = 8;
-	private final static String recordStoreName="highscore";
+import tetris.core.TetrisMIDlet;
 
+public class Highscore implements RecordComparator, RecordFilter {
+	private static Highscore instance=null;
+	
+	public static Highscore getInstance() {
+		if(instance == null) instance = new Highscore(); 
+		return instance;
+	}
+	public static void showHighscoreMenu(TetrisMIDlet midlet) {
+		Display d = Display.getDisplay(midlet);
+		d.setCurrent(new HighscoreMenu(midlet));
+	}
+
+	
+
+	/* -------------------------------------------------------------------- */
+	private final int LENGTH = 8;
+	private final String recordStoreName="highscore";
+	
 	private String names[] = new String[LENGTH];
 	private long points[] = new long[LENGTH];
 	private long match_points = 0;
 
-	public Highscore() {
+	private Highscore() {
 		loadScores();	
 	}
 

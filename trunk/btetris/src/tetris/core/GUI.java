@@ -3,45 +3,25 @@ package tetris.core;
 import javax.microedition.lcdui.*;
 
 import tetris.connection.ServerSearch;
-import tetris.highscore.HighscoreMenu;
 import tetris.highscore.NewHighscoreMenu;
-import tetris.settings.SettingsKeysMenu;
-import tetris.settings.SettingsMenu;
-import tetris.settings.SettingsOtherMenu;
-import tetris.tetris.TetrisGame;
+import tetris.tetris.TetrisCanvas;
 
 public class GUI {
 
 	private final Display display;
 	private final TetrisMIDlet midlet;
 
-	public TetrisGame gameCanvas;
+	public TetrisCanvas gameCanvas;
 
 	public GUI (TetrisMIDlet midlet) {
 		this.display=Display.getDisplay(midlet);
 		this.midlet =midlet;
 
-		gameCanvas = new TetrisGame(midlet);
+		gameCanvas = new TetrisCanvas(midlet);
 	}
 
 	public void showMainMenu() {
 		display.setCurrent(new MainMenu(midlet));
-	}
-
-	public void showSettingsMenu() {
-		display.setCurrent(new SettingsMenu(midlet));
-	}
-	
-	public void showSettingsKeysMenu() {
-		display.setCurrent(new SettingsKeysMenu(midlet));
-	}
-	
-	public void showSettingsOtherMenu() {
-		display.setCurrent(new SettingsOtherMenu(midlet));
-	}
-
-	public void showHighscoreMenu() {
-		display.setCurrent(new HighscoreMenu(midlet));
 	}
 
 	public void showAbout() {
@@ -95,26 +75,6 @@ public class GUI {
 
 	public void showTetrisCanvas() {
 		display.setCurrent(gameCanvas);
-	}
-
-	public void showGameOver(boolean won) {
-		String msg=(midlet.gameType==TetrisMIDlet.SINGLE)?"Game over":won?"You won":"You lost";
-		Alert a = new Alert("Game over",msg,null,AlertType.WARNING);
-
-		a.setTimeout(Alert.FOREVER);
-		a.addCommand(new Command("Restart",Command.OK,0));
-		a.addCommand(new Command("Main Menu",Command.STOP,1));
-		a.setCommandListener(new CommandListener() {
-			public void commandAction(Command c,Displayable d) {
-				if(c.getLabel() == "Restart") {
-					midlet.restartGame();
-				} else {
-					midlet.stopGame();
-					midlet.gui.showMainMenu();
-				}
-			}
-		});
-		display.setCurrent(a);
 	}
 
 	public void showError(String errText) {

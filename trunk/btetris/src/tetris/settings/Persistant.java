@@ -7,7 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import javax.microedition.rms.*;
 
-public abstract class Persistant {
+abstract class Persistant {
 	private final String name;
 
 	public Persistant(String recordStoreName) {

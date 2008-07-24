@@ -2,7 +2,6 @@ package tetris.tetris;
 
 import javax.microedition.lcdui.Graphics;
 
-
 class Row {	
 	public Block blocks[] = new Block[TetrisField.COLS];
 
