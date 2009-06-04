@@ -1,10 +1,16 @@
 package tetris.tetris;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import javax.microedition.lcdui.Graphics;
+
+import tetris.core.RecordStoreHandler;
 import tetris.core.TetrisMIDlet;
 
 
-class Brick {
+class Brick implements RecordStoreHandler.Persistant{
 
 	/* types[type][rotation][y][x] */
 	private static int types[][][][] = {
@@ -184,7 +190,7 @@ class Brick {
 
 	
 	public static Brick getRandomBrick() {
-		return new Brick(TetrisMIDlet.random(7), (TetrisField.COLS/2)-2, 0);
+		return new Brick(TetrisMIDlet.random(types.length), (TetrisField.COLS/2)-2, 0);
 	}
 	
 	private Brick(int type, int x, int y) {
@@ -264,4 +270,19 @@ class Brick {
 			blocks[i].paint(g, blockSize);
 	}
 
+	public void readObject(DataInputStream stream) throws IOException {
+		type = stream.readInt();
+		rotation = stream.readInt();
+		xoffset = stream.readInt();
+		yoffset = stream.readInt();
+		
+		updateBlocks();
+	}
+
+	public void writeObject(DataOutputStream stream) throws IOException {
+		stream.writeInt(type);
+		stream.writeInt(rotation);
+		stream.writeInt(xoffset);
+		stream.writeInt(yoffset);
+	}
 }

@@ -1,8 +1,14 @@
 package tetris.tetris;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import javax.microedition.lcdui.Graphics;
 
-class Row {	
+import tetris.core.RecordStoreHandler;
+
+class Row  implements RecordStoreHandler.Persistant{	
 	public Block blocks[] = new Block[TetrisField.COLS];
 
 	public Row() {
@@ -37,4 +43,23 @@ class Row {
 		for (int x = 0; x < blocks.length; x++)
 			if (blocks[x] != null) blocks[x].paint(g, blockSize);   		
     }
+    
+
+	public void readObject(DataInputStream stream) throws IOException {
+		for(int i=0;i<blocks.length;i++) {
+			boolean blockFollowing = stream.readBoolean();
+			if(blockFollowing) {
+				blocks[i] = new Block(0, 0, 0);
+				blocks[i].readObject(stream);
+			}
+		}
+	}
+
+	public void writeObject(DataOutputStream stream) throws IOException {
+		for(int i=0;i<blocks.length;i++) {
+			boolean blockExists = (blocks[i] != null);
+			stream.writeBoolean(blockExists);
+			if(blockExists) blocks[i].writeObject(stream);
+		}
+	}
 }

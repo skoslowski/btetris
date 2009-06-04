@@ -3,11 +3,12 @@ package tetris.settings;
 import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Display;
 
+import tetris.core.RecordStoreHandler;
 import tetris.core.TetrisMIDlet;
 
 import java.io.*;
 
-public class Settings extends Persistant {
+public class Settings implements RecordStoreHandler.Persistant {
 	
 	private static Settings instance = null;
 	
@@ -34,15 +35,21 @@ public class Settings extends Persistant {
 			Canvas.KEY_NUM3, Canvas.KEY_NUM5, Canvas.KEY_NUM8};
 	public int fallingSpeed=4, transitionSpeed=2;
 	public boolean syncBricks=true;
+	
+	private RecordStoreHandler rsHandler;
 
 	private Settings() {
-		super("Settings");
-		load();
+		rsHandler = new RecordStoreHandler();
+		rsHandler.load(this, "Settings");
+	}
+	
+	public void save() {
+		rsHandler.save(this, "Settings");
 	}
 
 	
 	// Load Settings from Stream
-	protected void readObject(DataInputStream stream) throws IOException {
+	public void readObject(DataInputStream stream) throws IOException {
 		for(int i = 0; i< keys.length; i++)
 			keys[i] = stream.readInt();
 		
@@ -69,7 +76,7 @@ public class Settings extends Persistant {
 	}
 	
 	// Save Setting to Stream	
-	protected void writeObject(DataOutputStream stream) throws IOException {		
+	public void writeObject(DataOutputStream stream) throws IOException {		
 		for(int i = 0; i< keys.length; i++)
 			stream.writeInt(keys[i]);
 		stream.writeInt(fallingSpeed);

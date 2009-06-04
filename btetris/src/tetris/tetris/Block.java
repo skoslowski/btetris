@@ -1,9 +1,15 @@
 package tetris.tetris;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 
-class Block {
+import tetris.core.RecordStoreHandler;
+
+class Block implements RecordStoreHandler.Persistant{
 
 	/* [block color][shadow color] */
 	private static int colors[][] = {
@@ -64,6 +70,20 @@ class Block {
 
 			g.drawImage(bitmaps[type], x*blockSize, (y-1)*blockSize, Graphics.TOP|Graphics.LEFT);
 		}
+	}
+	
+
+	public void readObject(DataInputStream stream) throws IOException {
+		type = stream.readInt();
+		x = stream.readInt();
+		y = stream.readInt();
+		
+	}
+
+	public void writeObject(DataOutputStream stream) throws IOException {
+		stream.writeInt(type);
+		stream.writeInt(x);
+		stream.writeInt(y);
 	}
 
 }

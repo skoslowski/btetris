@@ -1,12 +1,17 @@
 package tetris.tetris;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import javax.microedition.lcdui.*;
 
+import tetris.core.RecordStoreHandler;
 import tetris.core.TetrisMIDlet;
 import tetris.settings.*;
 import tetris.highscore.*;
 
-public class TetrisCanvas extends Canvas {
+public class TetrisCanvas extends Canvas implements RecordStoreHandler.Persistant {
 	/* Colors */
 	public static final int FRAME_COLOR = 0xFFFFFF, GRID_COLOR = 0x050505;
 	public static final int GAMEHEIGHT_COLOR = 0xDDDDDD;
@@ -29,7 +34,6 @@ public class TetrisCanvas extends Canvas {
 		
 		field = new TetrisField(midlet);
 		settings = Settings.getInstance();
-		
 		repaint();
 	}
 
@@ -176,23 +180,24 @@ public class TetrisCanvas extends Canvas {
 		if(gameState == TetrisCanvas.GAME_NORMAL) {
 			if(keyCode == keyCodes[0] || keyCode==-3) {
 				if(settings.transitionSpeed>0)
-					transitionThread.setAction(TetrisField.LEFT);
+					if(transitionThread!=null) transitionThread.setAction(TetrisField.LEFT);
 				else
 					field.brickTransition(TetrisField.LEFT);	
 			}
 			if(keyCode == keyCodes[1] || keyCode==-4) {
 				if(settings.transitionSpeed>0)
-					transitionThread.setAction(TetrisField.RIGHT);
+					if(transitionThread!=null) transitionThread.setAction(TetrisField.RIGHT);
 				else
 					field.brickTransition(TetrisField.RIGHT);;	
 			}
 
 			if(keyCode == keyCodes[2]) 				  field.brickTransition(TetrisField.ROTATE_LEFT);
 			if(keyCode == keyCodes[3] || keyCode==-1) field.brickTransition(TetrisField.ROTATE_RIGHT);
-			if(keyCode == keyCodes[4] || keyCode==-2) gameThread.setFalling(true);
+			if(keyCode == keyCodes[4] || keyCode==-2) 
+				if(gameThread!=null) gameThread.setFalling(true);
 			if(keyCode == keyCodes[5]) {
 				field.brickTransition(TetrisField.HARDDROP);
-				gameThread.restart();
+				if(gameThread!=null) gameThread.restart();
 			}
 		}
 
@@ -326,5 +331,14 @@ public class TetrisCanvas extends Canvas {
 
 	public void rowsToAdd(int i) {
 		field.rowsToAdd(i);
+	}
+
+	public void readObject(DataInputStream stream) throws IOException {
+		field.readObject(stream);
+		gameState = TetrisCanvas.GAME_PAUSED;
+	}
+
+	public void writeObject(DataOutputStream stream) throws IOException {
+		field.writeObject(stream);
 	}
 }
