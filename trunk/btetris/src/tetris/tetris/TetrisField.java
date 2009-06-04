@@ -1,13 +1,18 @@
 package tetris.tetris;
 
 import javax.microedition.lcdui.Graphics;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.lang.Integer;
 import java.util.Enumeration;
 import java.util.Vector;
 
+import tetris.core.RecordStoreHandler;
 import tetris.core.TetrisMIDlet;
 
-class TetrisField {
+class TetrisField implements RecordStoreHandler.Persistant {
 
 	public static final int ROTATE_LEFT = 1, ROTATE_RIGHT = 2, LEFT = 3;
 	public static final int RIGHT = 4, SOFTDROP = 5, HARDDROP = 6, STEP=7;
@@ -18,7 +23,7 @@ class TetrisField {
 	private Row rows[];
 	private Vector rowsToAdd; // send by peer
 
-	public TetrisField(TetrisMIDlet midlet) {
+	public TetrisField(TetrisMIDlet midlet) {		
 		this.midlet = midlet;	
 		rowsToAdd = new Vector();
 	
@@ -196,6 +201,26 @@ class TetrisField {
 		/* frame*/
 		g.setColor(TetrisCanvas.FRAME_COLOR);
 		g.drawRect(0, 0, areaWidth, areaHeight);
+	}
+
+	public void readObject(DataInputStream stream) throws IOException {
+		//Rows
+		for(int i=0; i<rows.length;i++)
+			rows[i].readObject(stream);
+		//Bricks
+		brick.readObject(stream);
+		nextBrick.readObject(stream);
+			
+	}
+
+	public void writeObject(DataOutputStream stream) throws IOException {
+		//Rows
+		for(int i=0;i<rows.length;i++)
+			rows[i].writeObject(stream);
+
+		brick.writeObject(stream);
+		nextBrick.writeObject(stream);
+		
 	}
 
 }

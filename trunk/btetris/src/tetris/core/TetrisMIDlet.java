@@ -40,17 +40,14 @@ public class TetrisMIDlet
 
 	public void startApp() {
 		gui.showMainMenu();
-		System.out.println("startApp");
 	}
 
 	public void pauseApp() {
-		System.out.println("pauseApp");
 		pauseGame(false);
 	}
 
 
 	public void destroyApp(boolean unconditional) {
-		System.out.println("stopApp");	
 		stopGame();
 	}
 
@@ -150,8 +147,18 @@ public class TetrisMIDlet
 		gui.gameCanvas = new TetrisCanvas(this);
 
 		if (gametype == SINGLE) {
+			// Check if a game was saved
+			boolean savedGameLoaded = loadGame();
+			
 			gui.showTetrisCanvas();
-			gui.gameCanvas.start();
+			if(savedGameLoaded) {
+				gui.gameCanvas.repaint();
+				try{ Thread.sleep(500); } catch (Exception e) {};
+				gui.showInGameMenu(true);
+
+			} else {
+				gui.gameCanvas.start();
+			}
 			
 		} else {
 			
@@ -283,6 +290,29 @@ public class TetrisMIDlet
 		}		
 	}	
 
+	
+	private boolean loadGame() {
+		boolean gameLoaded = false;
+		RecordStoreHandler rsHandler = new RecordStoreHandler();
+		boolean savedGameLoaded = rsHandler.load(gui.gameCanvas, "SavedGame");
+		if(savedGameLoaded) {
+			rsHandler.delete("SavedGame");
+			
+			score = new Scoring();
+			boolean savedScoresLoaded = rsHandler.load(score, "SavedGameScore");
+			if(savedScoresLoaded) rsHandler.delete("SavedGameScore");
+
+			gameLoaded = savedScoresLoaded;
+		}
+
+		return gameLoaded;
+	}
+
+	public void saveGame() {
+		RecordStoreHandler rsHandler = new RecordStoreHandler();
+		rsHandler.save(gui.gameCanvas, "SavedGame");
+		rsHandler.save(score, "SavedGameScore");
+	}
 	/*------------------------------------------------------------------------------*/
 
 	private void updateIconResolution() {
@@ -307,7 +337,9 @@ public class TetrisMIDlet
 
 	public static int random(int size) {
 		//return ((random.nextInt()&0x7FFFFFFF) + 2) % size;
-		return (random.nextInt(size) + random.nextInt(3)) % size;
+		//return (random.nextInt(size) + random.nextInt(3)) % size;
+		return random.nextInt(size);
+
 	}
 
 	public void vibrate(int millis) {

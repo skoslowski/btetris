@@ -1,11 +1,18 @@
 package tetris.tetris;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 
-public class Scoring {
+import tetris.core.RecordStoreHandler;
+
+public class Scoring implements RecordStoreHandler.Persistant {
 
 	private static int won = 0, lost = 0;
+	private static final int RATE_HISTORY_LENGTH = 25;
 	
 	private long points = 0;
 	private int lines = 0, sendRows = 0, level = 0, bricks=0;
@@ -52,7 +59,11 @@ public class Scoring {
 	public void addBrick() {
 		if(bricks != 0 && !gameWasPaused) {
 			float currentRate = 60*1000/(float)(System.currentTimeMillis()-lastBrick);
-			rate = (rate*(bricks-1) + currentRate)/bricks ;
+			//rate = (rate*(bricks-1) + currentRate)/bricks ;
+			
+			// Neue Rate als rate der letzten N Bricks. 
+			// Achtung: Schätzung mit der Annahme Var(X) klein.
+			rate = (rate*(RATE_HISTORY_LENGTH -1) + currentRate) / RATE_HISTORY_LENGTH;
 		}
 		gameWasPaused=false;
 		bricks++;
@@ -122,4 +133,32 @@ public class Scoring {
 		
 	}
 
+	public void readObject(DataInputStream stream) throws IOException {
+		bricks = stream.readInt();
+		doubles = stream.readInt();
+		gameWasPaused = true;
+		lastBrick = stream.readLong();
+		level = stream.readInt();
+		lineEvents = stream.readInt();
+		lines = stream.readInt();
+		points = stream.readLong();
+		rate = stream.readFloat();
+		singles = stream.readInt();
+		tetris = stream.readInt();
+		triples = stream.readInt();
+	}
+
+	public void writeObject(DataOutputStream stream) throws IOException {
+		stream.writeInt(bricks);
+		stream.writeInt(doubles);
+		stream.writeLong(lastBrick);
+		stream.writeInt(level);
+		stream.writeInt(lineEvents);
+		stream.writeInt(lines);
+		stream.writeLong(points);
+		stream.writeFloat(rate);
+		stream.writeInt(singles);
+		stream.writeInt(tetris);
+		stream.writeInt(triples);	
+	}
 }
