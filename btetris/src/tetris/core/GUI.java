@@ -52,14 +52,19 @@ public class GUI {
 	public void showInGameMenu(boolean pausing) {
 		Alert a = new Alert("GameMenu",pausing?"Game paused":"Game ended",null,AlertType.CONFIRMATION);
 		a.setTimeout(Alert.FOREVER);
+		
+		a.addCommand(new Command("Stop",Command.STOP,0));
 		if(pausing) {
 			a.addCommand(new Command("Continue",Command.OK,0));
+			
 			if(midlet.gameType == TetrisMIDlet.SINGLE)
-				a.addCommand(new Command("Save","Save game", Command.EXIT,1));
+				a.addCommand(new Command("Save",Command.ITEM,1));
 		} else {
 			a.addCommand(new Command("Restart",Command.OK,0));
 		}
-		a.addCommand(new Command("Stop",Command.STOP,1));
+		a.addCommand(new Command("Stop",Command.ITEM,1));
+		a.addCommand(new Command("Exit",Command.ITEM,1));
+
 		a.setCommandListener(new CommandListener() {
 			public void commandAction(Command c,Displayable d) {
 				if(c.getLabel() == "Restart") {
@@ -70,9 +75,13 @@ public class GUI {
 					midlet.saveGame();
 					midlet.stopGame();
 					midlet.gui.showMainMenu();
+				} else if(c.getLabel() =="Exit") {
+					midlet.stopGame();
+					midlet.quit();
 				} else {
 					midlet.stopGame();
-					midlet.gui.showMainMenu();
+					midlet.gui.showMainMenu();					
+				
 				}
 			}
 		});
