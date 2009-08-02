@@ -68,7 +68,7 @@ public class TetrisCanvas extends Canvas implements RecordStoreHandler.Persistan
 
 	/* Thread for falling brick */
 	private class GameThread extends Thread {
-		private static final long DEFAULT_SPEED = 800;
+		private static final long DEFAULT_SPEED = 800, SPEED_INCR = 20;
 		private boolean falling = false, restart = false, firstTime=true;
 
 		private synchronized void setFalling(boolean falling) {
@@ -82,7 +82,7 @@ public class TetrisCanvas extends Canvas implements RecordStoreHandler.Persistan
 		public void run() {
 			try {
 				while (Thread.currentThread() == gameThread) { 
-					long timeTick = Math.max(DEFAULT_SPEED - (long)30*midlet.score.getLevel(),50);
+					long timeTick = Math.max(DEFAULT_SPEED - (long)SPEED_INCR*midlet.score.getLevel(),60);
 					long timeTickFalling = Math.max((timeTick*(6-settings.fallingSpeed))/20,50);
 
 					long startTime = System.currentTimeMillis();

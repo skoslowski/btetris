@@ -3,6 +3,7 @@ package tetris.tetris;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Vector;
 
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
@@ -20,6 +21,7 @@ public class Scoring implements RecordStoreHandler.Persistant {
 
 	private long lastBrick = 0;
 	private float rate = 0;
+	private Vector latestRates = new Vector();
 	private boolean gameWasPaused=false;
 	
 	/* reset score counter */
@@ -57,13 +59,24 @@ public class Scoring implements RecordStoreHandler.Persistant {
 	}
 	
 	public void addBrick() {
-		if(bricks != 0 && !gameWasPaused) {
+		if(lastBrick!=0 && !gameWasPaused) {
 			float currentRate = 60*1000/(float)(System.currentTimeMillis()-lastBrick);
 			//rate = (rate*(bricks-1) + currentRate)/bricks ;
 			
+			float tempRate = rate * latestRates.size() + currentRate;
+			
+			if(latestRates.size() >= RATE_HISTORY_LENGTH) {
+				tempRate -= ((Float)latestRates.firstElement()).floatValue();
+				latestRates.removeElementAt(0);	
+			}
+			latestRates.addElement(new Float(currentRate));
+			rate = tempRate / latestRates.size();
+			
 			// Neue Rate als rate der letzten N Bricks. 
 			// Achtung: Schätzung mit der Annahme Var(X) klein.
-			rate = (rate*(RATE_HISTORY_LENGTH -1) + currentRate) / RATE_HISTORY_LENGTH;
+			//rate = (rate*(RATE_HISTORY_LENGTH -1) + currentRate) / Math.min(bricks,RATE_HISTORY_LENGTH);
+			
+			
 		}
 		gameWasPaused=false;
 		bricks++;

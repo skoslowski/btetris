@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="res"/>
+	<classpathentry kind="lib" path="C:/Nokia/Devices/S40_5th_Edition_SDK_Feature_Pack_1/lib/wma20.jar"/>
+	<classpathentry kind="lib" path="C:/Nokia/Devices/S40_5th_Edition_SDK_Feature_Pack_1/lib/cldc11.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="file:/C:/Nokia/Devices/S40_5th_Edition_SDK_Feature_Pack_1/doc/cldc-1_1-fr-spec/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Nokia/Devices/S40_5th_Edition_SDK_Feature_Pack_1/lib/jsr75.jar"/>
+	<classpathentry kind="lib" path="C:/Nokia/Devices/S40_5th_Edition_SDK_Feature_Pack_1/lib/jsr82.jar"/>
+	<classpathentry kind="lib" path="C:/Nokia/Devices/S40_5th_Edition_SDK_Feature_Pack_1/lib/jsr172.jar"/>
+	<classpathentry kind="lib" path="C:/Nokia/Devices/S40_5th_Edition_SDK_Feature_Pack_1/lib/jsr211.jar"/>
+	<classpathentry kind="lib" path="C:/Nokia/Devices/S40_5th_Edition_SDK_Feature_Pack_1/lib/midp20.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="file:/C:/Nokia/Devices/S40_5th_Edition_SDK_Feature_Pack_1/doc/midp-2_0-fr-spec/midpng-javadoc-final/javadoc/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="C:/Nokia/Devices/S40_5th_Edition_SDK_Feature_Pack_1/lib/midp21.jar"/>
+	<classpathentry kind="lib" path="C:/Nokia/Devices/S40_5th_Edition_SDK_Feature_Pack_1/lib/mmapi12.jar"/>
+	<classpathentry kind="lib" path="C:/Nokia/Devices/S40_5th_Edition_SDK_Feature_Pack_1/lib/nokiaui.jar"/>
+	<classpathentry kind="lib" path="C:/Nokia/Devices/S40_5th_Edition_SDK_Feature_Pack_1/lib/satsa-apdu.jar"/>
+	<classpathentry kind="lib" path="C:/Nokia/Devices/S40_5th_Edition_SDK_Feature_Pack_1/lib/satsa-crypto.jar"/>
+	<classpathentry kind="lib" path="C:/Nokia/Devices/S40_5th_Edition_SDK_Feature_Pack_1/lib/svg.jar"/>
+	<classpathentry kind="lib" path="C:/Nokia/Devices/S40_5th_Edition_SDK_Feature_Pack_1/lib/wma11.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

@@ -276,6 +276,9 @@ class Brick implements RecordStoreHandler.Persistant{
 		xoffset = stream.readInt();
 		yoffset = stream.readInt();
 		
+		for (int i = 0;i < 4;i++)
+			blocks[i] = new Block(type, 0, 0);	
+		
 		updateBlocks();
 	}
 
