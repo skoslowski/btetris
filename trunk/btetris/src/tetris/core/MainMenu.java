@@ -33,7 +33,7 @@ public class MainMenu extends List implements CommandListener {
 	public void commandAction(Command c, Displayable d) {
 
 		if(c == quit) {
-			midlet.quit();
+			midlet.exit();
 		}
 		else if(c == select) {
 
@@ -60,7 +60,7 @@ public class MainMenu extends List implements CommandListener {
 			case 6:
 				midlet.startGame(TetrisMIDlet.MULTI_TRAINING);
 			default:
-				midlet.quit();
+				midlet.exit();
 			}
 		}
 	}

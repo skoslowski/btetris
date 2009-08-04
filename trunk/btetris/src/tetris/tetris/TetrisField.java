@@ -38,7 +38,7 @@ public class TetrisField implements RecordStoreHandler.Persistant {
 	private void newBrick() {
 		brick = (nextBrick != null)? nextBrick : Brick.getRandomBrick();
 		nextBrick = Brick.getRandomBrick();
-		if (brickCollisionCheck(brick)) midlet.endOfGame();
+		if (brickCollisionCheck(brick)) midlet.endOfGame(false);
 	}
 
 	public Brick getNextBrick() {

@@ -3,28 +3,17 @@ package tetris.opponent;
 import java.util.Random;
 import tetris.tetris.TetrisField;
 
-public class VirtualOpponent {
+public class VirtualOpponent extends Opponent {
 	
 	private final Random random = new Random(System.currentTimeMillis());
 	
-	public interface VirtOpListener {
-		public void recieveRows(int count);
-		public void gameOver();
-		public void recieveOpponentHeight(int gameheight);
-	}
-	private VirtOpListener listener;
+	private TetrisPlayerListener listener;
 	
 	private int gameHeight=0, rowsNext=0, rowsTotal=0;
 	private float rowsDist[] = {4,3,2,1};
 	
-	public VirtualOpponent(VirtOpListener listener) {
+	public VirtualOpponent(TetrisPlayerListener listener) {
 		this.listener = listener;
-	}
-		
-	public void reset() {
-		gameHeight=0;
-		rowsNext = getNextNoOfRows(rowsDist);
-		rowsTotal = 0;		
 	}
 	
 	private volatile Thread buildThread = new Thread() {
@@ -69,24 +58,9 @@ public class VirtualOpponent {
 		}
 	};
 	
-	public synchronized void start() {
-		buildThread.start();
-		completionThread.start();
-	}
-
-	public synchronized void stop() throws NullPointerException {
-		buildThread.interrupt();
-		completionThread.interrupt();
-	}
-
-
-	public void addToRows(int count) {
-		gameHeight+=count;
-		checkLost();	
-	}
 	
 	private void checkLost() {
-		if(gameHeight >= TetrisField.ROWS) listener.gameOver();
+		if(gameHeight >= TetrisField.ROWS) listener.endOfGame(true);
 	}
 	
 	/* Return 1,2,3,4 with PDF dist */
@@ -100,6 +74,46 @@ public class VirtualOpponent {
 		while(rand <= vert[i] || i<=4) i++;
 		
 		return i;
+	}
+
+	public void endOfGame(boolean byPeer) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void pauseGame(boolean byPeer) {
+		stopGame(byPeer);		
+	}
+
+	public void recieveHeight(int gameheight) {
+
+	}
+
+	public void recieveRows(int count) {
+		gameHeight+=count;
+		checkLost();	
+	}
+
+	public void restartGame(boolean byPeer, long seed) {
+		gameHeight=0;
+		rowsNext = getNextNoOfRows(rowsDist);
+		rowsTotal = 0;
+	}
+
+	public synchronized void startGame(int gametype) {
+		restartGame(false,-1);
+		buildThread.start();
+		completionThread.start();	
+	}
+
+	public synchronized void stopGame(boolean byPeer) throws NullPointerException {
+		buildThread.interrupt();
+		completionThread.interrupt();
+	}
+
+	public void unpauseGame(boolean byPeer) {
+		// TODO Auto-generated method stub
+		
 	}
 
 	

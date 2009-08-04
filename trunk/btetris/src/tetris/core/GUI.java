@@ -36,7 +36,7 @@ public class GUI {
 		a.addCommand(new Command("Stop",Command.CANCEL,1));
 		a.setCommandListener(new CommandListener() {
 			public void commandAction(Command c, Displayable d) {
-				midlet.bluetoothDisconnected(true);
+				midlet.stopGame(false);
 			}
 		});
 		display.setCurrent(a);
@@ -68,19 +68,17 @@ public class GUI {
 		a.setCommandListener(new CommandListener() {
 			public void commandAction(Command c,Displayable d) {
 				if(c.getLabel() == "Restart") {
-					midlet.restartGame();
+					midlet.restartGame(false,-1);
 				} else if(c.getLabel() == "Continue") {
 					midlet.unpauseGame(false);
 				} else if(c.getLabel() == "Save") {
 					midlet.saveGame();
-					midlet.stopGame();
-					midlet.gui.showMainMenu();
+					midlet.stopGame(false);
 				} else if(c.getLabel() =="Exit") {
-					midlet.stopGame();
-					midlet.quit();
+					midlet.stopGame(false);
+					midlet.exit();
 				} else {
-					midlet.stopGame();
-					midlet.gui.showMainMenu();					
+					midlet.stopGame(false);				
 				
 				}
 			}

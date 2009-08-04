@@ -30,6 +30,11 @@ public class Scoring implements RecordStoreHandler.Persistant {
 		lost = 0;
 	}
 
+	public Scoring() {
+		latestRates.addElement(new Float(50));
+		latestRates.addElement(new Float(50));	
+	}
+	
 	public void notifyPaused() {
 		gameWasPaused=true;
 	}
@@ -159,6 +164,9 @@ public class Scoring implements RecordStoreHandler.Persistant {
 		singles = stream.readInt();
 		tetris = stream.readInt();
 		triples = stream.readInt();
+		
+		latestRates.removeAllElements();
+		for(int i=0; i<RATE_HISTORY_LENGTH/2; i++) latestRates.addElement(new Float(rate));
 	}
 
 	public void writeObject(DataOutputStream stream) throws IOException {
