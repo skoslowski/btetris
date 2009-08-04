@@ -20,6 +20,7 @@ public class MainMenu extends List implements CommandListener {
 		append("Highscore",TetrisMIDlet.createImage("/score.png"));
 		append("Settings", TetrisMIDlet.createImage("/config.png"));
 		append("Info", TetrisMIDlet.createImage("/info.png"));
+		append("Battle", TetrisMIDlet.createImage("/group.png"));
 
 		select=new Command("OK", Command.OK, 1);
 		quit=new Command("Exit", Command.EXIT, 2);
@@ -56,6 +57,8 @@ public class MainMenu extends List implements CommandListener {
 			case 5:
 				midlet.gui.showAbout();
 				break;
+			case 6:
+				midlet.startGame(TetrisMIDlet.MULTI_TRAINING);
 			default:
 				midlet.quit();
 			}

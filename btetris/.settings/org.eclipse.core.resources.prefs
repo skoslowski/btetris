@@ -1,4 +1,4 @@
-#Sun Aug 02 13:36:13 CEST 2009
+#Tue Aug 04 11:15:18 CEST 2009
 eclipse.preferences.version=1
 encoding//.processed/src/tetris/connection/BluetoothClient.java=UTF-8
 encoding//.processed/src/tetris/connection/BluetoothDiscovery.java=UTF-8
@@ -11,11 +11,16 @@ encoding//.processed/src/tetris/core/GUI.java=UTF-8
 encoding//.processed/src/tetris/core/Images.java=UTF-8
 encoding//.processed/src/tetris/core/MainMenu.java=UTF-8
 encoding//.processed/src/tetris/core/RecordStoreHandler.java=UTF-8
+encoding//.processed/src/tetris/core/TGMrandomizer.java=UTF-8
 encoding//.processed/src/tetris/core/TetrisMIDlet.java=UTF-8
 encoding//.processed/src/tetris/highscore/Highscore.java=UTF-8
 encoding//.processed/src/tetris/highscore/HighscoreMenu.java=UTF-8
 encoding//.processed/src/tetris/highscore/NewHighscoreMenu.java=UTF-8
-encoding//.processed/src/tetris/settings/Persistant.java=UTF-8
+encoding//.processed/src/tetris/opponent/BluetoothOpponent.java=UTF-8
+encoding//.processed/src/tetris/opponent/Opponent.java=UTF-8
+encoding//.processed/src/tetris/opponent/OpponentListener.java=UTF-8
+encoding//.processed/src/tetris/opponent/VirtualOpponent.java=UTF-8
+encoding//.processed/src/tetris/opponent/VirtualOpponentSettings.java=UTF-8
 encoding//.processed/src/tetris/settings/Settings.java=UTF-8
 encoding//.processed/src/tetris/settings/SettingsKeysMenu.java=UTF-8
 encoding//.processed/src/tetris/settings/SettingsMenu.java=UTF-8

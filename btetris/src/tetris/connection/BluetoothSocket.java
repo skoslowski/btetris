@@ -9,7 +9,7 @@ public abstract class BluetoothSocket implements Runnable {
 
 	public interface BluetoothListener {
 		void bluetoothConnected();
-		void bluetoothReceivedEvent(byte b[]);
+		void bluetoothHandleEvent(byte b[]);
 		void bluetoothDisconnected(boolean wasRunning);	
 		void bluetoothError(String e);
 	}
@@ -45,7 +45,7 @@ public abstract class BluetoothSocket implements Runnable {
 					if(inBuf[0] != Protocol.PING) {
 						byte tmpBuf[] = new byte[inBuf.length];
 						System.arraycopy(inBuf, 0, tmpBuf, 0, inBuf.length);
-						listener.bluetoothReceivedEvent(tmpBuf);
+						listener.bluetoothHandleEvent(tmpBuf);
 					}
 				} else {
 					if(++ticksSinceLastEvent >= PING_TICKS) {

@@ -1,8 +1,0 @@
-MIDlet-1: btetris,/red.png,tetris.core.TetrisMIDlet
-MIDlet-Jar-Size: 174279
-MIDlet-Jar-URL: BTetris.jar
-MIDlet-Name: BTetris
-MIDlet-Vendor: Midlet Suite Vendor
-MIDlet-Version: 2.8.10
-MicroEdition-Configuration: CLDC-1.1
-MicroEdition-Profile: MIDP-2.0
