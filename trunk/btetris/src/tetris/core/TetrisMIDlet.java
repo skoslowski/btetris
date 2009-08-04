@@ -4,18 +4,18 @@ import javax.microedition.midlet.*;
 import javax.microedition.lcdui.*;
 
 import java.io.*;
-import java.util.*;
 
 import tetris.connection.*;
+import tetris.opponent.VirtualOpponent;
 import tetris.settings.Settings;
 import tetris.tetris.*;
 
 public class TetrisMIDlet 
 	extends MIDlet 
-	implements BluetoothSocket.BluetoothListener 
+	implements BluetoothSocket.BluetoothListener, VirtualOpponent.VirtOpListener
 {
 
-	public static final int SINGLE = 0, MULTI_HOST = 1, MULTI_CLIENT = 2;
+	public static final int SINGLE = 0, MULTI_HOST = 1, MULTI_CLIENT = 2, MULTI_TRAINING = 3;
 	public int gameType = SINGLE;
 	public final String version;
 	
@@ -23,12 +23,13 @@ public class TetrisMIDlet
 	public Scoring score;
 	
 	private BluetoothSocket bt = null;
+	private VirtualOpponent virtOp = null;
 
 	private final int iconResolutions[] = {16,24,32,48};
 	public final int fontColor;
 
 	private static int iconResolution=0;
-	private static final Random random = new Random();
+	public static final TGMrandomizer random = new TGMrandomizer();
 
 	public TetrisMIDlet() {
 		gui = new GUI(this);
@@ -56,7 +57,9 @@ public class TetrisMIDlet
 		notifyDestroyed();
 	}
 
-	/*------------------------------BT-Stuff----------------------------------*/
+	/*----------------------------------------------------------------------*/
+	/*---------------------------- BT-Stuff --------------------------------*/
+	/*----------------------------------------------------------------------*/
 
 	public void connectToServer(String url) {
 		bt = new BluetoothClient(url,this);
@@ -77,25 +80,19 @@ public class TetrisMIDlet
 		gui.showError(s);
 	}
 
-	public void bluetoothReceivedEvent(byte b[]) {
+	public void bluetoothHandleEvent(byte b[]) {
 		switch (b[0]) {
 		case Protocol.ONE_LINE:
-			gui.gameCanvas.rowsToAdd(1);
-			vibrate(200);
+			recieveRows(1);
 			break;
 		case Protocol.TWO_LINES:
-			gui.gameCanvas.rowsToAdd(2);
-			vibrate(200);
+			recieveRows(2);
 			break;
 		case Protocol.FOUR_LINES:
-			gui.gameCanvas.rowsToAdd(4);
-			vibrate(200);
+			recieveRows(4);
 			break;
 		case Protocol.GAME_HEIHGT:
-			if(b.length>1) {
-				int gameh = (int)b[1];
-				gui.gameCanvas.setOpponentsGameHeight(gameh);
-			}
+			if(b.length>1) recieveOpponentHeight((int)b[1]);
 			break;
 		case Protocol.PAUSE_GAME:
 			pauseGame(true);
@@ -104,9 +101,7 @@ public class TetrisMIDlet
 			unpauseGame(true);
 			break;
 		case Protocol.I_LOST:
-			gui.gameCanvas.stop();
-			gui.gameCanvas.showWon();
-			score.addWon();
+			gameOver();
 			break;
 		case Protocol.RESTART:
 			/* sync random */
@@ -117,7 +112,7 @@ public class TetrisMIDlet
 					
 					inputStream.readByte();
 					long seed = inputStream.readLong();
-					if(Settings.getInstance().syncBricks) random.setSeed(seed);
+					if(Settings.getInstance().syncBricks) random.reset(seed);
 					
 					inputStream.close();
 					bias.close();
@@ -129,7 +124,29 @@ public class TetrisMIDlet
 		}
 	}
 	
-	/*----------------------------Game-Stuff----------------------------------*/
+	
+	/*----------------------------------------------------------------------*/
+	/*--------------------------- Opponent ---------------------------------*/
+	/*----------------------------------------------------------------------*/
+
+	public void gameOver() {
+		gui.gameCanvas.stop();
+		gui.gameCanvas.showWon();
+		score.addWon();	
+	}
+
+	public void recieveRows(int count) {
+		gui.gameCanvas.rowsToAdd(count);
+		vibrate(200);
+	}
+	
+	public void recieveOpponentHeight(int gameheight) {
+		gui.gameCanvas.setOpponentsGameHeight(gameheight);
+	}
+
+	/*----------------------------------------------------------------------*/
+	/*--------------------------- Game-Stuff -------------------------------*/
+	/*----------------------------------------------------------------------*/
 
 	public void startGame(int gametype) {
 		// check if bluetooth is turned on
@@ -168,32 +185,40 @@ public class TetrisMIDlet
 				gui.showMultiplayerWaiting(true);
 			
 			} else if (gametype == MULTI_CLIENT) {
-					gui.showServerSearch();
-			}	
+				gui.showServerSearch();
+					
+			} else if (gametype == MULTI_TRAINING) {
+				virtOp = new VirtualOpponent(this);
+				gui.showTetrisCanvas();
+				gui.gameCanvas.start();
+				virtOp.start();
+			}
 		}
 	}
 
 	/* multiple rows completed in one strike */
 	public void multiRowCompleted(int count) {
-		if(gameType == SINGLE) return;
-
-		if (count >= 4) {
-			bt.send(Protocol.FOUR_LINES); 
-			score.addSendRows(4);
-		} else if (count == 3) {
-			bt.send(Protocol.TWO_LINES); 
-			score.addSendRows(2);
-		} else if (count == 2) {
-			bt.send(Protocol.ONE_LINE); 
-			score.addSendRows(1);
+		// Calculate Rows to send.	
+		if(--count >= 3) count = 4;
+		if(count == 0) return;
+	
+		if(gameType == MULTI_HOST || gameType == MULTI_CLIENT) {
+			byte code = (count==4)?Protocol.FOUR_LINES:(count==2)?Protocol.TWO_LINES:Protocol.ONE_LINE;
+			bt.send(code);
+			score.addSendRows(count);
+		
+		} else if(gameType == MULTI_TRAINING) {
+			virtOp.addToRows(count);
+			score.addSendRows(count);
 		}
 	}
 	
 	/* transmit game height to opponent*/
 	public void sendGameHeight(int myHeight) {
-		if(gameType == SINGLE) return;
-		byte buf[] = {Protocol.GAME_HEIHGT,(byte)myHeight};
-		bt.send(buf);
+		if(gameType == MULTI_HOST || gameType == MULTI_CLIENT) {
+			byte buf[] = {Protocol.GAME_HEIHGT,(byte)myHeight};
+			bt.send(buf);
+		}
 	}
 	
 	/* pause Game - notify peer */
@@ -205,7 +230,11 @@ public class TetrisMIDlet
 		
 		if(!byPeer) {
 			//notify peer
-			if(gameType!=SINGLE) bt.send(Protocol.PAUSE_GAME);
+			if(gameType == MULTI_HOST || gameType == MULTI_CLIENT) {
+				 bt.send(Protocol.PAUSE_GAME);
+			} else if(gameType == MULTI_TRAINING) {
+				virtOp.stop();
+			}
 			//Show in game menu
 			gui.showInGameMenu(true);
 		}
@@ -217,7 +246,13 @@ public class TetrisMIDlet
 	/* UnPause Game - notify peer */
 	public void unpauseGame(boolean byPeer) {
 		// notify peer
-		if (!byPeer && gameType!=SINGLE)  bt.send(Protocol.UNPAUSE_GAME);
+		if (!byPeer) {
+			if(gameType == MULTI_HOST || gameType == MULTI_CLIENT) {
+				bt.send(Protocol.UNPAUSE_GAME);
+			} else if(gameType == MULTI_TRAINING) {
+				virtOp.start();
+			}	
+		}
 	
 		gui.gameCanvas.start();
 		gui.showTetrisCanvas();
@@ -231,8 +266,11 @@ public class TetrisMIDlet
 		//gui.showGameOver(false);
 		vibrate(200);
 
-		if (gameType == MULTI_CLIENT || gameType == MULTI_HOST)
+		if (gameType == MULTI_CLIENT || gameType == MULTI_HOST) {
 			bt.send(Protocol.I_LOST); /* you win! */
+		} else if(gameType == MULTI_TRAINING) {
+			virtOp.stop();
+		}
 	}
 
 	/* request restart of game*/
@@ -241,7 +279,7 @@ public class TetrisMIDlet
 			
 			/* Generating new seed (points for more randomness ) */
 			long seed = System.currentTimeMillis() + score.getPoints();		
-			random.setSeed(seed);
+			random.reset(seed);
 
 			/* Transmit new seed */	
 			try {
@@ -260,7 +298,10 @@ public class TetrisMIDlet
 				bt.send(Protocol.RESTART);
 			}
 					
-		}	
+		} else if(gameType == MULTI_TRAINING) {
+			virtOp.reset();
+			virtOp.start();
+		}
 		restartGameStart();
 	}
 
@@ -277,6 +318,7 @@ public class TetrisMIDlet
 		try {
 			if(gui.gameCanvas!=null) gui.gameCanvas.stop();
 			if(bt!=null) bt.stop();	
+			if(virtOp!=null) virtOp.stop();	
 			
 		} catch (NullPointerException e) {
 			e.printStackTrace();
@@ -285,6 +327,7 @@ public class TetrisMIDlet
 			gui.gameCanvas=null;
 			score = null;
 			bt=null;
+			virtOp=null;
 			
 			System.gc();
 		}		
@@ -313,7 +356,11 @@ public class TetrisMIDlet
 		rsHandler.save(gui.gameCanvas, "SavedGame");
 		rsHandler.save(score, "SavedGameScore");
 	}
-	/*------------------------------------------------------------------------------*/
+	
+
+	/*----------------------------------------------------------------------*/
+	/*----------------------------------------------------------------------*/
+	/*----------------------------------------------------------------------*/
 
 	private void updateIconResolution() {
 		Display display = Display.getDisplay(this);
@@ -335,17 +382,8 @@ public class TetrisMIDlet
 		return image;
 	}
 
-	public static int random(int size) {
-		//return ((random.nextInt()&0x7FFFFFFF) + 2) % size;
-		//return (random.nextInt(size) + random.nextInt(3)) % size;
-		return random.nextInt(size);
-
-	}
-
 	public void vibrate(int millis) {
 		Display.getDisplay(this).vibrate(millis);
 	}
-
-
 
 }

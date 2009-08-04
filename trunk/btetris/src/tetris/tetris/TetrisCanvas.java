@@ -11,7 +11,11 @@ import tetris.core.TetrisMIDlet;
 import tetris.settings.*;
 import tetris.highscore.*;
 
-public class TetrisCanvas extends Canvas implements RecordStoreHandler.Persistant {
+public class TetrisCanvas 
+	extends Canvas 
+	implements RecordStoreHandler.Persistant 
+{
+
 	/* Colors */
 	public static final int FRAME_COLOR = 0xFFFFFF, GRID_COLOR = 0x050505;
 	public static final int GAMEHEIGHT_COLOR = 0xDDDDDD;
@@ -68,7 +72,7 @@ public class TetrisCanvas extends Canvas implements RecordStoreHandler.Persistan
 
 	/* Thread for falling brick */
 	private class GameThread extends Thread {
-		private static final long DEFAULT_SPEED = 800, SPEED_INCR = 20;
+		private static final long DEFAULT_SPEED = 800, SPEED_INCR = 22;
 		private boolean falling = false, restart = false, firstTime=true;
 
 		private synchronized void setFalling(boolean falling) {

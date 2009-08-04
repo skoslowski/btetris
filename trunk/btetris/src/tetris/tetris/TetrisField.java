@@ -7,12 +7,13 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.Integer;
 import java.util.Enumeration;
+import java.util.Random;
 import java.util.Vector;
 
 import tetris.core.RecordStoreHandler;
 import tetris.core.TetrisMIDlet;
 
-class TetrisField implements RecordStoreHandler.Persistant {
+public class TetrisField implements RecordStoreHandler.Persistant {
 
 	public static final int ROTATE_LEFT = 1, ROTATE_RIGHT = 2, LEFT = 3;
 	public static final int RIGHT = 4, SOFTDROP = 5, HARDDROP = 6, STEP=7;
@@ -21,11 +22,12 @@ class TetrisField implements RecordStoreHandler.Persistant {
 	private Brick brick, nextBrick = null;  // for preview
 	private TetrisMIDlet midlet;
 	private Row rows[];
-	private Vector rowsToAdd; // send by peer
+	
+	private final Vector rowsToAdd = new Vector();; // send by peer
+	private final Random random = new Random(System.currentTimeMillis());
 
 	public TetrisField(TetrisMIDlet midlet) {		
 		this.midlet = midlet;	
-		rowsToAdd = new Vector();
 	
 		rows = new Row[ROWS+1];
 		for (int y = 0;y < rows.length;y++) rows[y] = new Row();
@@ -149,7 +151,8 @@ class TetrisField implements RecordStoreHandler.Persistant {
 	
 	private void addRandomRows() {
 		for(Enumeration e = rowsToAdd.elements(); e.hasMoreElements(); ) {
-			int holePos = TetrisMIDlet.random(COLS);
+			
+			int holePos = random.nextInt(COLS);
 			int count = ((Integer)e.nextElement()).intValue();
 			
 			/* move other rows up */

@@ -14,9 +14,9 @@ class Brick implements RecordStoreHandler.Persistant{
 
 	/* types[type][rotation][y][x] */
 	private static int types[][][][] = {
-			{
+			{ 
 				{
-					{0, 0, 0, 0},
+					{0, 0, 0, 0},				// O
 					{0, 1, 1, 0},
 					{0, 1, 1, 0},
 					{0, 0, 0, 0}
@@ -25,7 +25,7 @@ class Brick implements RecordStoreHandler.Persistant{
 
 			{
 				{
-					{0, 0, 0, 0},
+					{0, 0, 0, 0},				// I
 					{1, 1, 1, 1},
 					{0, 0, 0, 0},
 					{0, 0, 0, 0}
@@ -52,7 +52,7 @@ class Brick implements RecordStoreHandler.Persistant{
 
 			{
 				{
-					{0, 0, 0, 0},
+					{0, 0, 0, 0},				// T
 					{1, 1, 1, 0},
 					{0, 1, 0, 0},
 					{0, 0, 0, 0}
@@ -79,7 +79,7 @@ class Brick implements RecordStoreHandler.Persistant{
 
 			{
 				{
-					{0, 0, 0, 0},
+					{0, 0, 0, 0},				// L
 					{1, 1, 1, 0},
 					{1, 0, 0, 0},
 					{0, 0, 0, 0}
@@ -106,7 +106,7 @@ class Brick implements RecordStoreHandler.Persistant{
 
 			{
 				{
-					{0, 0, 0, 0},
+					{0, 0, 0, 0},				// J
 					{1, 1, 1, 0},
 					{0, 0, 1, 0},
 					{0, 0, 0, 0}
@@ -133,7 +133,7 @@ class Brick implements RecordStoreHandler.Persistant{
 
 			{
 				{
-					{0, 0, 0, 0},
+					{0, 0, 0, 0},				// Z
 					{1, 1, 0, 0},
 					{0, 1, 1, 0},
 					{0, 0, 0, 0}
@@ -159,7 +159,7 @@ class Brick implements RecordStoreHandler.Persistant{
 			},
 			{				
 				{
-					{0, 0, 0, 0},
+					{0, 0, 0, 0},				// S
 					{0, 1, 1, 0},
 					{1, 1, 0, 0},
 					{0, 0, 0, 0}
@@ -190,7 +190,7 @@ class Brick implements RecordStoreHandler.Persistant{
 
 	
 	public static Brick getRandomBrick() {
-		return new Brick(TetrisMIDlet.random(types.length), (TetrisField.COLS/2)-2, 0);
+		return new Brick(TetrisMIDlet.random.getNext(), (TetrisField.COLS/2)-2, 0);
 	}
 	
 	private Brick(int type, int x, int y) {
