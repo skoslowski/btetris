@@ -45,6 +45,7 @@ public class TetrisCanvas
 	private class TransitionThread extends Thread {
 		private static final long TRANSITION_SPEED = 200;
 		private int action=0;
+		private boolean running = true;
 
 		public synchronized void setAction(int action) { 
 			this.action = action;
@@ -52,19 +53,23 @@ public class TetrisCanvas
 		}
 
 		public void run() {
+			running = true;
 			try {
 				long timeTick=TRANSITION_SPEED-50*(settings.transitionSpeed-2);
 				do {
-					if(!isShown()) action=0;
-					synchronized(this) {
-						if(action>0) {
-							field.brickTransition(action);
-							repaint();
+					try {
+						if(!isShown()) action=0;
+						synchronized(this) {
+							if(action>0) {
+								field.brickTransition(action);
+								repaint();
+							}
+							wait(timeTick);
 						}
-						wait(timeTick);
+					} catch (InterruptedException e) {
+						if(!running) break;
 					}
-				} while(transitionThread == Thread.currentThread());
-			} catch (InterruptedException e) {
+				} while(running);
 			} catch (NullPointerException e) {}
 		}		
 	}
@@ -74,6 +79,7 @@ public class TetrisCanvas
 	private class GameThread extends Thread {
 		private static final long DEFAULT_SPEED = 800, SPEED_INCR = 22;
 		private boolean falling = false, restart = false, firstTime=true;
+		private boolean running = true;
 
 		private synchronized void setFalling(boolean falling) {
 			this.falling=falling;
@@ -84,46 +90,48 @@ public class TetrisCanvas
 			notify();
 		}
 		public void run() {
+			running = true;
 			try {
-				while (Thread.currentThread() == gameThread) { 
-					long timeTick = Math.max(DEFAULT_SPEED - (long)SPEED_INCR*midlet.score.getLevel(),60);
-					long timeTickFalling = Math.max((timeTick*(6-settings.fallingSpeed))/20,50);
-
-					long startTime = System.currentTimeMillis();
-					if (isShown() && gameState == TetrisCanvas.GAME_NORMAL && !firstTime) {
-						if(!falling)
-							field.brickTransition(TetrisField.STEP);
-						else
-							field.brickTransition(TetrisField.SOFTDROP);
-						repaint();
-					}
-					firstTime=false;
-					
-					long timeTaken = System.currentTimeMillis() - startTime;
-
-					synchronized(this) {
-						try {
-							do {
-								restart = false;
-								if(!falling) {
-									// Normal Tick
-									wait(timeTick - timeTaken);
-								} else {
-									// Fast Tick (falling)
-									wait(timeTickFalling- timeTaken);
-									if(!falling && !restart)
-										// additional pause if falling was ended during wait(...)
-										wait(timeTick - (System.currentTimeMillis() - startTime));
-								}
-							} while (restart);
-						}  catch (IllegalArgumentException e) {
-							// if one of wait(...) calls had a negative argument
-							Thread.yield();
+				while (running) {
+					try {
+						long timeTick = Math.max(DEFAULT_SPEED - (long)SPEED_INCR*midlet.score.getLevel(),60);
+						long timeTickFalling = Math.max((timeTick*(6-settings.fallingSpeed))/20,50);
+	
+						long startTime = System.currentTimeMillis();
+						if (isShown() && gameState == TetrisCanvas.GAME_NORMAL && !firstTime) {
+							if(!falling)
+								field.brickTransition(TetrisField.STEP);
+							else
+								field.brickTransition(TetrisField.SOFTDROP);
+							repaint();
 						}
-					}
-				}
-			} catch (NullPointerException e) {
-			} catch (InterruptedException e) {}
+						firstTime=false;
+						
+						long timeTaken = System.currentTimeMillis() - startTime;
+	
+						synchronized(this) {
+							try {
+								do {
+									restart = false;
+									if(!falling) {
+										// Normal Tick
+										wait(timeTick - timeTaken);
+									} else {
+										// Fast Tick (falling)
+										wait(timeTickFalling- timeTaken);
+										if(!falling && !restart)
+											// additional pause if falling was ended during wait(...)
+											wait(timeTick - (System.currentTimeMillis() - startTime));
+									}
+								} while (restart);
+							}  catch (IllegalArgumentException e) {
+								// if one of wait(...) calls had a negative argument
+								Thread.yield();
+							}
+						} 
+					} catch (InterruptedException e) {}
+				} 
+			} catch (NullPointerException e) {}
 		}
 	}
 	private volatile GameThread gameThread = null;
@@ -149,10 +157,12 @@ public class TetrisCanvas
 	/* Shutdown the Game */
 	public synchronized void stop() throws NullPointerException {
 		if(gameThread != null) {
-			gameThread.interrupt();;
+			gameThread.running=false;
+			gameThread.interrupt();
 			gameThread = null;
 		}
 		if(transitionThread != null) {
+			transitionThread.running=false;
 			transitionThread.interrupt();
 			transitionThread = null;
 		}	

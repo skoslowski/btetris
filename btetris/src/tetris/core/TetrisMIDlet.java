@@ -3,16 +3,13 @@ package tetris.core;
 import javax.microedition.midlet.*;
 import javax.microedition.lcdui.*;
 
-import java.io.*;
-
 import tetris.connection.*;
-import tetris.opponent.VirtualOpponent;
-import tetris.settings.Settings;
+import tetris.opponent.*;
 import tetris.tetris.*;
 
 public class TetrisMIDlet 
 	extends MIDlet 
-	implements BluetoothSocket.BluetoothListener, VirtualOpponent.VirtOpListener
+	implements TetrisPlayerListener
 {
 
 	public static final int SINGLE = 0, MULTI_HOST = 1, MULTI_CLIENT = 2, MULTI_TRAINING = 3;
@@ -20,10 +17,9 @@ public class TetrisMIDlet
 	public final String version;
 	
 	public final GUI gui;
-	public Scoring score;
 	
-	private BluetoothSocket bt = null;
-	private VirtualOpponent virtOp = null;
+	public Scoring score = null;
+	private Opponent opponent = null;
 
 	private final int iconResolutions[] = {16,24,32,48};
 	public final int fontColor;
@@ -49,10 +45,10 @@ public class TetrisMIDlet
 
 
 	public void destroyApp(boolean unconditional) {
-		stopGame();
+		stopGame(false);
 	}
 
-	public void quit() {		
+	public void exit() {		
 		destroyApp(false);
 		notifyDestroyed();
 	}
@@ -62,85 +58,19 @@ public class TetrisMIDlet
 	/*----------------------------------------------------------------------*/
 
 	public void connectToServer(String url) {
-		bt = new BluetoothClient(url,this);
-		bt.start();
+		((BluetoothOpponent)opponent).startGame(MULTI_CLIENT, url);
 	}
-
-	public void bluetoothConnected() {
-		if(gameType==MULTI_HOST) restartGame();
-		/*Client waits for server to request "restart" */
-	}
-	
-	public void bluetoothDisconnected(boolean byPeer) {
-		stopGame();
-		gui.showMainMenu();
-	}
-
-	public void bluetoothError(String s) {
-		gui.showError(s);
-	}
-
-	public void bluetoothHandleEvent(byte b[]) {
-		switch (b[0]) {
-		case Protocol.ONE_LINE:
-			recieveRows(1);
-			break;
-		case Protocol.TWO_LINES:
-			recieveRows(2);
-			break;
-		case Protocol.FOUR_LINES:
-			recieveRows(4);
-			break;
-		case Protocol.GAME_HEIHGT:
-			if(b.length>1) recieveOpponentHeight((int)b[1]);
-			break;
-		case Protocol.PAUSE_GAME:
-			pauseGame(true);
-			break;
-		case Protocol.UNPAUSE_GAME:
-			unpauseGame(true);
-			break;
-		case Protocol.I_LOST:
-			gameOver();
-			break;
-		case Protocol.RESTART:
-			/* sync random */
-			if(Settings.getInstance().syncBricks) {
-				try {
-					ByteArrayInputStream bias = new ByteArrayInputStream(b);
-					DataInputStream inputStream = new DataInputStream(bias);
-					
-					inputStream.readByte();
-					long seed = inputStream.readLong();
-					if(Settings.getInstance().syncBricks) random.reset(seed);
-					
-					inputStream.close();
-					bias.close();
-				} catch (IOException e) {}
-			}
-			/* restart game */
-			restartGameStart();
-			break;
-		}
-	}
-	
 	
 	/*----------------------------------------------------------------------*/
 	/*--------------------------- Opponent ---------------------------------*/
 	/*----------------------------------------------------------------------*/
-
-	public void gameOver() {
-		gui.gameCanvas.stop();
-		gui.gameCanvas.showWon();
-		score.addWon();	
-	}
 
 	public void recieveRows(int count) {
 		gui.gameCanvas.rowsToAdd(count);
 		vibrate(200);
 	}
 	
-	public void recieveOpponentHeight(int gameheight) {
+	public void recieveHeight(int gameheight) {
 		gui.gameCanvas.setOpponentsGameHeight(gameheight);
 	}
 
@@ -164,6 +94,7 @@ public class TetrisMIDlet
 		gui.gameCanvas = new TetrisCanvas(this);
 
 		if (gametype == SINGLE) {
+			opponent= null;
 			// Check if a game was saved
 			boolean savedGameLoaded = loadGame();
 			
@@ -180,18 +111,20 @@ public class TetrisMIDlet
 		} else {
 			
 			if (gametype == MULTI_HOST) {
-				bt = new BluetoothServer(this);
-				bt.start();
+				opponent = new BluetoothOpponent(this);
+				opponent.startGame(MULTI_HOST);
 				gui.showMultiplayerWaiting(true);
 			
 			} else if (gametype == MULTI_CLIENT) {
+				opponent = new BluetoothOpponent(this);
 				gui.showServerSearch();
 					
 			} else if (gametype == MULTI_TRAINING) {
-				virtOp = new VirtualOpponent(this);
+				opponent = new VirtualOpponent(this);
+				opponent.startGame(-1);
+				
 				gui.showTetrisCanvas();
 				gui.gameCanvas.start();
-				virtOp.start();
 			}
 		}
 	}
@@ -202,111 +135,69 @@ public class TetrisMIDlet
 		if(--count >= 3) count = 4;
 		if(count == 0) return;
 	
-		if(gameType == MULTI_HOST || gameType == MULTI_CLIENT) {
-			byte code = (count==4)?Protocol.FOUR_LINES:(count==2)?Protocol.TWO_LINES:Protocol.ONE_LINE;
-			bt.send(code);
-			score.addSendRows(count);
-		
-		} else if(gameType == MULTI_TRAINING) {
-			virtOp.addToRows(count);
+		if(opponent != null) {
+			opponent.recieveRows(count);
 			score.addSendRows(count);
 		}
 	}
 	
 	/* transmit game height to opponent*/
 	public void sendGameHeight(int myHeight) {
-		if(gameType == MULTI_HOST || gameType == MULTI_CLIENT) {
-			byte buf[] = {Protocol.GAME_HEIHGT,(byte)myHeight};
-			bt.send(buf);
-		}
+		if(opponent != null) opponent.recieveHeight(myHeight);
 	}
 	
 	/* pause Game - notify peer */
 	public void pauseGame(boolean byPeer) {
+		//stop local game
 		gui.gameCanvas.stop();
-		
 		//show pause message
 		gui.gameCanvas.showPaused();
-		
-		if(!byPeer) {
-			//notify peer
-			if(gameType == MULTI_HOST || gameType == MULTI_CLIENT) {
-				 bt.send(Protocol.PAUSE_GAME);
-			} else if(gameType == MULTI_TRAINING) {
-				virtOp.stop();
-			}
-			//Show in game menu
-			gui.showInGameMenu(true);
-		}
-		
 		// Notify ScoreObject for rate calculation
 		score.notifyPaused();
+		// notify opponent
+		if(!byPeer) {
+			if(opponent!=null) opponent.pauseGame(true);
+		
+			gui.showInGameMenu(true);
+		}
 	}
 	
 	/* UnPause Game - notify peer */
 	public void unpauseGame(boolean byPeer) {
 		// notify peer
-		if (!byPeer) {
-			if(gameType == MULTI_HOST || gameType == MULTI_CLIENT) {
-				bt.send(Protocol.UNPAUSE_GAME);
-			} else if(gameType == MULTI_TRAINING) {
-				virtOp.start();
-			}	
-		}
-	
+		if (!byPeer && opponent!=null) opponent.unpauseGame(true);
+		
 		gui.gameCanvas.start();
 		gui.showTetrisCanvas();
 	}
 
 	/* hit the ceiling */
-	public void endOfGame() {
+	public void endOfGame(boolean byPeer) {
 		gui.gameCanvas.stop();
-		gui.gameCanvas.showLost();
-		score.addLost();
-		//gui.showGameOver(false);
-		vibrate(200);
-
-		if (gameType == MULTI_CLIENT || gameType == MULTI_HOST) {
-			bt.send(Protocol.I_LOST); /* you win! */
-		} else if(gameType == MULTI_TRAINING) {
-			virtOp.stop();
+		
+		if(byPeer) {
+			gui.gameCanvas.showWon();
+			score.addWon();	
+		} else {
+			gui.gameCanvas.showLost();
+			score.addLost();
 		}
+		vibrate(200);
+		
+		if(!byPeer && opponent!=null) opponent.endOfGame(true);
 	}
 
 	/* request restart of game*/
-	public void restartGame() {
-		if (gameType == MULTI_CLIENT || gameType == MULTI_HOST) {
-			
+	public void restartGame(boolean byPeer, long seed) {
+		if(!byPeer && opponent != null) {
 			/* Generating new seed (points for more randomness ) */
-			long seed = System.currentTimeMillis() + score.getPoints();		
-			random.reset(seed);
-
-			/* Transmit new seed */	
-			try {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				DataOutputStream outputStream = new DataOutputStream(baos);	
-				
-				outputStream.writeByte(Protocol.RESTART);
-				outputStream.writeLong(seed);
-				outputStream.flush();
-				bt.send(baos.toByteArray()); 
-			
-				outputStream.close();
-				baos.close();
-				
-			} catch(IOException e) {
-				bt.send(Protocol.RESTART);
-			}
+			seed = System.currentTimeMillis() + score.getPoints();		
 					
-		} else if(gameType == MULTI_TRAINING) {
-			virtOp.reset();
-			virtOp.start();
+			
+			opponent.restartGame(true, seed);
 		}
-		restartGameStart();
-	}
-
-	/* restart the game local*/
-	public void restartGameStart() {
+		if(seed != -1) random.reset(seed);	
+					
 		score = new Scoring();
 		gui.gameCanvas = new TetrisCanvas(this);
 		gui.showTetrisCanvas();
@@ -314,11 +205,10 @@ public class TetrisMIDlet
 	}
 
 	/* end game before */
-	public void stopGame() {	
+	public void stopGame(boolean byPeer) {	
 		try {
 			if(gui.gameCanvas!=null) gui.gameCanvas.stop();
-			if(bt!=null) bt.stop();	
-			if(virtOp!=null) virtOp.stop();	
+			if(!byPeer && opponent!=null) opponent.stopGame(false);	
 			
 		} catch (NullPointerException e) {
 			e.printStackTrace();
@@ -326,11 +216,12 @@ public class TetrisMIDlet
 		} finally {
 			gui.gameCanvas=null;
 			score = null;
-			bt=null;
-			virtOp=null;
+			opponent=null;
 			
 			System.gc();
-		}		
+		}
+		
+		gui.showMainMenu();
 	}	
 
 	
