@@ -90,7 +90,7 @@ public abstract class BluetoothSocket implements Runnable {
 				connection.close();
 			} catch (IOException e) {}
 		}
-		if(connectionThread != null) {
+		if(connectionThread!=null) {
 			connectionThread.interrupt();
 			connectionThread = null;
 		}

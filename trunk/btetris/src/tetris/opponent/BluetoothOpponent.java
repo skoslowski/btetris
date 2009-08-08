@@ -107,7 +107,7 @@ public class BluetoothOpponent
 	}	
 
 	public synchronized void stopGame(boolean byPeer) {
-		bt.stop();
+		if(bt instanceof BluetoothSocket) bt.stop();
 	}	
 	
 	public void restartGame(boolean byPeer, long seed) {

@@ -16,6 +16,7 @@ class SettingsMenu extends List implements CommandListener {
 		
 		append("Keys",null);
 		append("Other",null);
+		append("Save Log to File",null);
 
 		select=new Command("OK", Command.OK, 1);
 		setSelectCommand(select);
@@ -31,6 +32,10 @@ class SettingsMenu extends List implements CommandListener {
 				break;
 			case 1:
 				Settings.showSettingsOtherMenu(midlet);
+				break;
+
+			case 2:
+				midlet.gameLog.saveLogToFile();
 				break;
 
 			}

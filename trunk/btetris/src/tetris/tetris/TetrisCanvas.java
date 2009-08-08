@@ -156,12 +156,12 @@ public class TetrisCanvas
 
 	/* Shutdown the Game */
 	public synchronized void stop() throws NullPointerException {
-		if(gameThread != null) {
+		if(gameThread!=null) {
 			gameThread.running=false;
 			gameThread.interrupt();
 			gameThread = null;
 		}
-		if(transitionThread != null) {
+		if(transitionThread!=null) {
 			transitionThread.running=false;
 			transitionThread.interrupt();
 			transitionThread = null;
@@ -205,9 +205,11 @@ public class TetrisCanvas
 					field.brickTransition(TetrisField.RIGHT);;	
 			}
 
-			if(keyCode == keyCodes[2]) 				  field.brickTransition(TetrisField.ROTATE_LEFT);
-			if(keyCode == keyCodes[3] || keyCode==-1) field.brickTransition(TetrisField.ROTATE_RIGHT);
-			if(keyCode == keyCodes[4] || keyCode==-2) 
+			if(keyCode == keyCodes[2])
+				field.brickTransition(TetrisField.ROTATE_LEFT);
+			if(keyCode == keyCodes[3] || keyCode==-1) 
+				field.brickTransition(TetrisField.ROTATE_RIGHT);
+			if(keyCode == keyCodes[4] || keyCode==-2)
 				if(gameThread!=null) gameThread.setFalling(true);
 			if(keyCode == keyCodes[5]) {
 				field.brickTransition(TetrisField.HARDDROP);

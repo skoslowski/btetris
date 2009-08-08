@@ -13,7 +13,7 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 {
 	private final TetrisMIDlet midlet;
 
-	private final Command connect, back, rescan, recheck,stop;
+	private final Command connect, back, rescan, recheck, stop;
 	
 	private static final int STATUS_ONLINE = 3, STATUS_OFFLINE = 2, STATUS_CHECKING = 1, STATUS_NOTCHECKED = 0;
 	private final Image icons[];
@@ -83,6 +83,10 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 			btDiscovery.startServiceSearch();
 		}
 	}
+	
+	public void stop() {
+		btDiscovery.stopInquiry();
+	}
 
 	public void commandAction(Command c, Displayable d) {
 		if(c == back) {
@@ -90,7 +94,7 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 			midlet.gui.showMainMenu();
 		
 		} else if(c == stop) {
-			btDiscovery.stopInquiry();
+			stop();
 			
 		} else if(c == rescan) {
 			btDiscovery.stopServiceSearch();
@@ -151,9 +155,11 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 		// index just before the inquiry indicator
 		int index = size()-1;
 		//add to list, map ID to index
-		this.insert(index, name, null);
+		insert(index, name, null);
 		changeStatus(index,STATUS_NOTCHECKED);
 		devIdToEntries.put(id, new Integer(index));	
+		
+		if(devIdToEntries.size()==1) midlet.gui.showAndStartServerSearch(false);
 	}
 	
 	public void bluetoothInquiryCompleted(int size) {

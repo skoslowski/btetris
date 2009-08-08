@@ -107,6 +107,8 @@ public class TetrisField implements RecordStoreHandler.Persistant {
 			addRandomRows();
 			// send new GameHeight
 			midlet.sendGameHeight(getGameHeight());
+
+			midlet.gameLog.add("1, "+getGameHeight()+", "+System.currentTimeMillis());
 			// Create new Brick
 			newBrick();
 			midlet.score.addBrick();
@@ -141,6 +143,7 @@ public class TetrisField implements RecordStoreHandler.Persistant {
 				count++;
 			}
 		}
+		if(count>0) midlet.gameLog.add("2, "+count+", "+System.currentTimeMillis());
 		return count;
 	}
 
