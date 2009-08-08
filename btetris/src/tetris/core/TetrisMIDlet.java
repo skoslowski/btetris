@@ -20,19 +20,26 @@ public class TetrisMIDlet
 	
 	public Scoring score = null;
 	private Opponent opponent = null;
-
+ 
+	public GameLog gameLog = null;
+	
 	private final int iconResolutions[] = {16,24,32,48};
 	public final int fontColor;
 
 	private static int iconResolution=0;
 	public static final TGMrandomizer random = new TGMrandomizer();
 
+	/*----------------------------------------------------------------------*/
+	/*---------------------------- MIDlet Stuff-----------------------------*/
+	/*----------------------------------------------------------------------*/
+
 	public TetrisMIDlet() {
-		gui = new GUI(this);
-		
 		updateIconResolution();
 		version = getAppProperty("MIDlet-Version");
 		fontColor = Display.getDisplay(this).getColor(Display.COLOR_FOREGROUND);
+		
+		gui = new GUI(this);
+		gameLog = new GameLog();
 	}
 
 	public void startApp() {
@@ -52,49 +59,27 @@ public class TetrisMIDlet
 		destroyApp(false);
 		notifyDestroyed();
 	}
-
-	/*----------------------------------------------------------------------*/
-	/*---------------------------- BT-Stuff --------------------------------*/
-	/*----------------------------------------------------------------------*/
-
-	public void connectToServer(String url) {
-		((BluetoothOpponent)opponent).startGame(MULTI_CLIENT, url);
-	}
 	
-	/*----------------------------------------------------------------------*/
-	/*--------------------------- Opponent ---------------------------------*/
-	/*----------------------------------------------------------------------*/
-
-	public void recieveRows(int count) {
-		gui.gameCanvas.rowsToAdd(count);
-		vibrate(200);
-	}
-	
-	public void recieveHeight(int gameheight) {
-		gui.gameCanvas.setOpponentsGameHeight(gameheight);
-	}
-
 	/*----------------------------------------------------------------------*/
 	/*--------------------------- Game-Stuff -------------------------------*/
 	/*----------------------------------------------------------------------*/
 
 	public void startGame(int gametype) {
 		// check if bluetooth is turned on
-		if (gametype != SINGLE)
+		if (gametype == MULTI_CLIENT || gametype == MULTI_HOST)
 			if (!BluetoothSocket.isBluetoothOn()) {
 				gui.showError("Bluetooth is turned off");
 				return;
 			}
 			
 		this.gameType = gametype;
-
-		Scoring.resetWonLost();
-		score = new Scoring();
-		
-		gui.gameCanvas = new TetrisCanvas(this);
+		Scoring.resetWonLost();		
 
 		if (gametype == SINGLE) {
 			opponent= null;
+			score = new Scoring();
+			gui.gameCanvas = new TetrisCanvas(this);
+			
 			// Check if a game was saved
 			boolean savedGameLoaded = loadGame();
 			
@@ -117,16 +102,22 @@ public class TetrisMIDlet
 			
 			} else if (gametype == MULTI_CLIENT) {
 				opponent = new BluetoothOpponent(this);
-				gui.showServerSearch();
+				gui.showAndStartServerSearch(true);
 					
 			} else if (gametype == MULTI_TRAINING) {
+				score = new Scoring();
+				gui.gameCanvas = new TetrisCanvas(this);
 				opponent = new VirtualOpponent(this);
+
 				opponent.startGame(-1);
-				
 				gui.showTetrisCanvas();
 				gui.gameCanvas.start();
 			}
 		}
+	}
+
+	public void connectToServer(String url) {
+		((BluetoothOpponent)opponent).startGame(MULTI_CLIENT, url);
 	}
 
 	/* multiple rows completed in one strike */
@@ -141,9 +132,18 @@ public class TetrisMIDlet
 		}
 	}
 	
+	public void recieveRows(int count) {
+		gui.gameCanvas.rowsToAdd(count);
+		vibrate(200);
+	}	
+	
 	/* transmit game height to opponent*/
 	public void sendGameHeight(int myHeight) {
-		if(opponent != null) opponent.recieveHeight(myHeight);
+		if(opponent!=null) opponent.recieveHeight(myHeight);
+	}
+	
+	public void recieveHeight(int gameheight) {
+		gui.gameCanvas.setOpponentsGameHeight(gameheight);
 	}
 	
 	/* pause Game - notify peer */
@@ -189,11 +189,11 @@ public class TetrisMIDlet
 
 	/* request restart of game*/
 	public void restartGame(boolean byPeer, long seed) {
-		if(!byPeer && opponent != null) {
+		if(!byPeer && opponent!=null) {
 			/* Generating new seed (points for more randomness ) */
-			seed = System.currentTimeMillis() + score.getPoints();		
-					
-			
+			seed = System.currentTimeMillis();
+			if(score!=null) seed += score.getPoints();		
+
 			opponent.restartGame(true, seed);
 		}
 		if(seed != -1) random.reset(seed);	
@@ -268,6 +268,7 @@ public class TetrisMIDlet
 		try {
 			image = Image.createImage("/" + iconResolution + filename);
 		} catch (java.io.IOException ex) {
+			System.out.println("Image not Found: " + filename);
 			return null;
 		}
 		return image;
@@ -276,5 +277,6 @@ public class TetrisMIDlet
 	public void vibrate(int millis) {
 		Display.getDisplay(this).vibrate(millis);
 	}
+
 
 }

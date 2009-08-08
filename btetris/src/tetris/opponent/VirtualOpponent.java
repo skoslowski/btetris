@@ -10,16 +10,18 @@ public class VirtualOpponent extends Opponent {
 	private TetrisPlayerListener listener;
 	
 	private int gameHeight=0, rowsNext=0, rowsTotal=0;
-	private float rowsDist[] = {4,3,2,1};
+	private float rowsDist[] = {65,20,7,8};
 	
 	public VirtualOpponent(TetrisPlayerListener listener) {
 		this.listener = listener;
 	}
 	
-	private volatile Thread buildThread = new Thread() {
+	private class BuildThread extends Thread {
+		public boolean running = true;
 		public void run() {
-			try {	
-				while(true) {				
+			running = true;
+			while(running) {
+				try {					
 					gameHeight++;
 					
 					int timeTick = Math.max(800 - 20*rowsTotal/10,200);
@@ -27,40 +29,45 @@ public class VirtualOpponent extends Opponent {
 					synchronized(this) {
 						wait(timeTick);
 					}
-				}
-			} catch (InterruptedException e) {}
+				} catch (InterruptedException e) {}
+			}
 		}
-	};
+	}
+	private volatile BuildThread buildThread = null;;
 	
-	private volatile Thread completionThread = new Thread() {
+	private class CompletionThread extends Thread {
+		public boolean running = true;
 		public void run() {
-			try {	
-				while(true) {
+			running = true;
+			while(running) {
+				try {	
 					gameHeight -= rowsNext;
 					rowsTotal += rowsNext;
 					// Send Rows
-					if(rowsNext>1) listener.recieveRows((rowsNext==4)?4:(rowsNext==3)?2:1);
-					
-					// Calculate some sort of Height --> How?
-					// Send new Height
-					// Lost? Won?
-					
-					rowsNext = Math.max(gameHeight, getNextNoOfRows(rowsDist));
+
 					// Wait Random time + figure out what to send next
 					// --> Relation?
-
+					long timeTick = 1000 * (random.nextInt(5)+random.nextInt(5)+5);
 
 					synchronized(this) {
-						wait(111);
+						wait(timeTick);
 					}
+					
+					if(rowsNext>1) listener.recieveRows((rowsNext==4)?4:(rowsNext==3)?2:1);
+					
+					rowsNext = Math.max(gameHeight, getNextNoOfRows(rowsDist));					
+					
+				} catch (InterruptedException e) {
+					gameHeight--;
 				}
-			} catch (InterruptedException e) {}
+			}
+			System.out.println("done");
 		}
-	};
-	
+	}
+	private volatile CompletionThread completionThread = null;
 	
 	private void checkLost() {
-		if(gameHeight >= TetrisField.ROWS) listener.endOfGame(true);
+		//if(gameHeight >= TetrisField.ROWS) listener.endOfGame(true);
 	}
 	
 	/* Return 1,2,3,4 with PDF dist */
@@ -71,20 +78,23 @@ public class VirtualOpponent extends Opponent {
 		float rand = random.nextFloat() * (dist[0]+dist[1]+dist[2]+dist[3]);
 		
 		int i = 0;
-		while(rand <= vert[i] || i<=4) i++;
+		while(i<=3 && rand >= vert[i]) 
+			i++;
 		
-		return i;
+		return i+1;
 	}
 
-	public void endOfGame(boolean byPeer) {
-		// TODO Auto-generated method stub
-		
-	}
+	/*----------------------------------------------------------------------*/
+	/*----------------------------------------------------------------------*/
 
-	public void pauseGame(boolean byPeer) {
-		stopGame(byPeer);		
-	}
 
+	public synchronized void startGame(int gametype) {
+		gameHeight=0;
+		rowsNext = getNextNoOfRows(rowsDist);
+		rowsTotal = 0;
+		restartGame(false,-1);
+	}
+	
 	public void recieveHeight(int gameheight) {
 
 	}
@@ -93,27 +103,45 @@ public class VirtualOpponent extends Opponent {
 		gameHeight+=count;
 		checkLost();	
 	}
-
-	public void restartGame(boolean byPeer, long seed) {
-		gameHeight=0;
-		rowsNext = getNextNoOfRows(rowsDist);
-		rowsTotal = 0;
-	}
-
-	public synchronized void startGame(int gametype) {
-		restartGame(false,-1);
-		buildThread.start();
-		completionThread.start();	
-	}
-
-	public synchronized void stopGame(boolean byPeer) throws NullPointerException {
-		buildThread.interrupt();
-		completionThread.interrupt();
+	
+	public void pauseGame(boolean byPeer) {
+		stopGame(byPeer);		
 	}
 
 	public void unpauseGame(boolean byPeer) {
-		// TODO Auto-generated method stub
+		restartGame(false, -1);	
+	}
+	
+	public void endOfGame(boolean byPeer) {
+		stopGame(byPeer);	
+	}
+
+	public synchronized void restartGame(boolean byPeer, long seed) {
+		if(buildThread==null) {
+			buildThread = new BuildThread();
+			buildThread.start();
+		}
 		
+		if(completionThread == null) {
+			completionThread = new CompletionThread();
+			completionThread.start();
+		}	
+	}
+
+	public synchronized void stopGame(boolean byPeer) throws NullPointerException {
+		if(buildThread!=null) {
+			buildThread.running=false;
+			buildThread.interrupt();
+			try { buildThread.join(); } catch (InterruptedException e) {}
+			buildThread=null;
+		}
+		
+		if(completionThread!=null) {
+			completionThread.running=false;
+			completionThread.interrupt();
+			try { completionThread.join(); } catch (InterruptedException e) {}
+			completionThread = null;
+		}
 	}
 
 	

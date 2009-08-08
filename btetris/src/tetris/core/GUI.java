@@ -10,20 +10,21 @@ public class GUI {
 
 	private final Display display;
 	private final TetrisMIDlet midlet;
+	private final MainMenu mainMenu;
 
 	public TetrisCanvas gameCanvas;
+	
 
 	public GUI (TetrisMIDlet midlet) {
 		this.display=Display.getDisplay(midlet);
 		this.midlet =midlet;
-
-		gameCanvas = new TetrisCanvas(midlet);
+		this.mainMenu = new MainMenu(midlet);
 	}
 
 	public void showMainMenu() {
-		display.setCurrent(new MainMenu(midlet));
+		mainMenu.show();
 	}
-
+	
 	public void showAbout() {
 		display.setCurrent(new AboutMenu(midlet));
 	}
@@ -42,11 +43,27 @@ public class GUI {
 		display.setCurrent(a);
 	}
 
-	public void showServerSearch() {
-		ServerSearch serverSearch = new ServerSearch(midlet);
-		display.setCurrent(serverSearch);
-		//try { Thread.sleep(200); } catch(Exception e) {}
+	public void showAndStartServerSearch(boolean showAlert) {
+		final ServerSearch serverSearch = new ServerSearch(midlet);
+		
 		serverSearch.init();
+		
+		if(showAlert) {
+			Alert a = new Alert("Server Search","Searching for devices",null,null);
+			a.setTimeout(10000);
+			a.setIndicator(new Gauge(null,false,Gauge.INDEFINITE,Gauge.CONTINUOUS_RUNNING));
+			a.addCommand(new Command("Stop",Command.CANCEL,1));
+			a.setCommandListener(new CommandListener() {
+				public void commandAction(Command c, Displayable d) {
+					serverSearch.stop();
+					showMainMenu();
+				}
+			});
+			display.setCurrent(a);
+		
+		} else {
+			display.setCurrent(serverSearch);
+		}	
 	}
 
 	public void showInGameMenu(boolean pausing) {

@@ -1,4 +1,5 @@
 MIDlet-1: btetris,/red.png,tetris.core.TetrisMIDlet
+MIDlet-Jar-Size: 203570
 MIDlet-Jar-URL: BTetris.jar
 MIDlet-Name: BTetris
 MIDlet-Vendor: Midlet Suite Vendor
