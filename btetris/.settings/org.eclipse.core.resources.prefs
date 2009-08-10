@@ -1,11 +1,11 @@
-#Sat Aug 08 11:27:57 CEST 2009
+#Mon Aug 10 13:14:06 CEST 2009
 eclipse.preferences.version=1
 encoding//.processed/src/tetris/connection/BluetoothClient.java=UTF-8
 encoding//.processed/src/tetris/connection/BluetoothDiscovery.java=UTF-8
 encoding//.processed/src/tetris/connection/BluetoothServer.java=UTF-8
 encoding//.processed/src/tetris/connection/BluetoothSocket.java=UTF-8
 encoding//.processed/src/tetris/connection/Protocol.java=UTF-8
-encoding//.processed/src/tetris/connection/ServerSearch.java=UTF-8
+encoding//.processed/src/tetris/connection/ServerSearchMenu.java=UTF-8
 encoding//.processed/src/tetris/core/AboutMenu.java=UTF-8
 encoding//.processed/src/tetris/core/GUI.java=UTF-8
 encoding//.processed/src/tetris/core/GameLog.java=UTF-8

@@ -10,10 +10,19 @@ public class VirtualOpponent extends Opponent {
 	private TetrisPlayerListener listener;
 	
 	private int gameHeight=0, rowsNext=0, rowsTotal=0;
-	private float rowsDist[] = {65,20,7,8};
+	private float rowsDist[] = {65,20,7,15};
 	
 	public VirtualOpponent(TetrisPlayerListener listener) {
 		this.listener = listener;
+		
+		float dist[] = {1, 2, 2, 10, 2 , 2, 1};
+		int hist[] = new int[dist.length];
+		for(int i = 0; i<1000; i++) {
+			hist[getNextInt(dist)]++;
+		}
+		for(int i = 0; i<hist.length; i++)
+			System.out.println(hist[i]);
+		
 	}
 	
 	private class BuildThread extends Thread {
@@ -82,6 +91,24 @@ public class VirtualOpponent extends Opponent {
 			i++;
 		
 		return i+1;
+	}
+	
+	/* Return 1,2,3,4 with PDF dist */
+	private int getNextInt(float dist[]) {
+		if(dist == null || dist.length == 0) return -1;
+		
+		float vert[] = new float[dist.length];
+		vert[0] = dist[0];
+		for(int i = 1; i<vert.length; i++) {
+			vert[i] = vert[i-1] + dist[i];
+		}
+		float rand = random.nextFloat() * vert[vert.length-1];
+
+		
+		int i = 0;
+		while(i<vert.length-1 && rand >= vert[i]) i++;
+		
+		return i;
 	}
 
 	/*----------------------------------------------------------------------*/

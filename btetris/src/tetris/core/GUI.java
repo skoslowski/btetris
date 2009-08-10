@@ -2,7 +2,7 @@ package tetris.core;
 
 import javax.microedition.lcdui.*;
 
-import tetris.connection.ServerSearch;
+import tetris.connection.ServerSearchMenu;
 import tetris.highscore.NewHighscoreMenu;
 import tetris.tetris.TetrisCanvas;
 
@@ -43,27 +43,8 @@ public class GUI {
 		display.setCurrent(a);
 	}
 
-	public void showAndStartServerSearch(boolean showAlert) {
-		final ServerSearch serverSearch = new ServerSearch(midlet);
-		
-		serverSearch.init();
-		
-		if(showAlert) {
-			Alert a = new Alert("Server Search","Searching for devices",null,null);
-			a.setTimeout(10000);
-			a.setIndicator(new Gauge(null,false,Gauge.INDEFINITE,Gauge.CONTINUOUS_RUNNING));
-			a.addCommand(new Command("Stop",Command.CANCEL,1));
-			a.setCommandListener(new CommandListener() {
-				public void commandAction(Command c, Displayable d) {
-					serverSearch.stop();
-					showMainMenu();
-				}
-			});
-			display.setCurrent(a);
-		
-		} else {
-			display.setCurrent(serverSearch);
-		}	
+	public void showAndStartServerSearch() {
+		new ServerSearchMenu(midlet);
 	}
 
 	public void showInGameMenu(boolean pausing) {
@@ -101,7 +82,6 @@ public class GUI {
 			}
 		});
 		display.setCurrent(a);
-		//display.setCurrent(new InGameMenu(midlet, pausing));
 	}
 
 	public void showTetrisCanvas() {
