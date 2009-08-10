@@ -102,7 +102,7 @@ public class TetrisMIDlet
 			
 			} else if (gametype == MULTI_CLIENT) {
 				opponent = new BluetoothOpponent(this);
-				gui.showAndStartServerSearch(true);
+				gui.showAndStartServerSearch();
 					
 			} else if (gametype == MULTI_TRAINING) {
 				score = new Scoring();

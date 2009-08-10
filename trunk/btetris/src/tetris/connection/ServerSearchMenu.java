@@ -7,7 +7,7 @@ import java.util.Hashtable;
 
 import tetris.core.TetrisMIDlet;
 
-public class ServerSearch 
+public class ServerSearchMenu 
 extends List 
 implements CommandListener, BluetoothDiscovery.BluetoothServerListener 
 {
@@ -23,7 +23,9 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 	private Hashtable devIdToEntries;
 	private Hashtable URLs;
 
-	public ServerSearch(TetrisMIDlet midlet) {
+	private boolean showMainMenuNext = false;
+
+	public ServerSearchMenu(TetrisMIDlet midlet) {
 		super("Serverlist", List.IMPLICIT);
 		setFitPolicy(Choice.TEXT_WRAP_ON);
 		
@@ -54,15 +56,15 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 		status[STATUS_CHECKING] = "checking";
 		status[STATUS_OFFLINE] = "offline";
 		status[STATUS_ONLINE] = "online";
-	}
-	
-	public void init() {
-		// Check for Devices0
+		
+		
+		// Check for Devices
 		Hashtable devices = btDiscovery.getDevices();
 
 		if(devices == null) {
 			// Look for Devices
 			startInquiry();
+			showSearchWaiting();
 		} else {
 			for(Enumeration e = devices.keys();e.hasMoreElements();) {
 				// Extract info
@@ -74,15 +76,45 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 				//map ID to index	
 				devIdToEntries.put(id,new Integer(index));
 			}
-
+			
 			// remove/add commands
 			addCommand(rescan);
 			addCommand(recheck);
 			setSelectCommand(connect);
 			// start looking for Tetris Servers
 			btDiscovery.startServiceSearch();
+			
+			showList();
 		}
 	}
+	
+	public void showSearchWaiting() {
+		Alert a = new Alert("Server Search","Searching for devices",null,null);
+		a.setTimeout(Alert.FOREVER);
+		a.setIndicator(new Gauge(null,false,Gauge.INDEFINITE,Gauge.CONTINUOUS_RUNNING));
+		a.addCommand(new Command("Stop",Command.CANCEL,1));
+		a.setCommandListener(new CommandListener() {
+			public void commandAction(Command c, Displayable d) {
+				showMainMenuNext=true;
+				stop();
+			}
+		});
+		
+		/* Auto Dismiss...
+		(new Thread() { public void run() { 
+			try {
+				Thread.sleep(20000);
+				showList();
+			} catch (InterruptedException e) {}
+		}} ).start();
+		*/
+		Display.getDisplay(midlet).setCurrent(a);
+	}
+	
+	public void showList() {
+		if(!showMainMenuNext) Display.getDisplay(midlet).setCurrent(this);
+	}
+	
 	
 	public void stop() {
 		btDiscovery.stopInquiry();
@@ -159,7 +191,7 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 		changeStatus(index,STATUS_NOTCHECKED);
 		devIdToEntries.put(id, new Integer(index));	
 		
-		if(devIdToEntries.size()==1) midlet.gui.showAndStartServerSearch(false);
+		if(devIdToEntries.size()==1) showList();
 	}
 	
 	public void bluetoothInquiryCompleted(int size) {
@@ -181,11 +213,15 @@ implements CommandListener, BluetoothDiscovery.BluetoothServerListener
 			deleteAll();
 			setSelectCommand(null);
 		}
+		
+		showList();
 	}
 	
 	public void bluetoothInquiryTerminated() {
 		// same behavior as InquiryCompleted
 		bluetoothInquiryCompleted(size()-1);
+		
+		if(showMainMenuNext) midlet.gui.showMainMenu();
 	}
 	
 	/* ----------------------------------------------------------------------- */
